@@ -1,4 +1,6 @@
-const API_BASE_URL = "https://notes-libary.vercel.app/api";
+
+const BASE_URL = import.meta.env.VITE_BACKEND_URL
+const API_BASE_URL = `${BASE_URL}/api`;
 
 // Get token from localStorage
 export const getToken = () => {

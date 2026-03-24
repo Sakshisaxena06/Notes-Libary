@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./Auth.css";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 function Login({
   onLoginSuccess,
   onBack,
@@ -24,7 +26,7 @@ function Login({
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/login", {
+      const response = await fetch(`${BACKEND_URL}/api/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

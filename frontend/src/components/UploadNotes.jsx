@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { fetchWithAuth } from "../utils/api";
 import "./PageContent.css";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 function UploadNotes({ user, isAdmin }) {
   const [files, setFiles] = useState([]);
@@ -42,7 +42,7 @@ function UploadNotes({ user, isAdmin }) {
   const fetchUserNotes = async () => {
     try {
       const response = await fetchWithAuth(
-        `http://localhost:5000/api/notes/user/${user._id}`,
+        `${BACKEND_URL}/api/notes/user/${user._id}`,
       );
       if (response.ok) {
         const notes = await response.json();
@@ -116,7 +116,7 @@ function UploadNotes({ user, isAdmin }) {
         if (isAdmin) params.append("isAdmin", "true");
 
         const response = await fetchWithAuth(
-          `http://localhost:5000/api/notes/${fileToDelete._id}?${params.toString()}`,
+          `${BACKEND_URL}/api/notes/${fileToDelete._id}?${params.toString()}`,
           {
             method: "DELETE",
           },
@@ -142,8 +142,8 @@ function UploadNotes({ user, isAdmin }) {
       try {
         // Pass userId to verify ownership
         const url = user?._id
-          ? `http://localhost:5000/api/notes/${file._id}/favorite?userId=${user._id}`
-          : `http://localhost:5000/api/notes/${file._id}/favorite`;
+          ? `${BACKEND_URL}/api/notes/${file._id}/favorite?userId=${user._id}`
+          : `${BACKEND_URL}/api/notes/${file._id}/favorite`;
 
         const response = await fetchWithAuth(url, {
           method: "PUT",
@@ -251,7 +251,7 @@ function UploadNotes({ user, isAdmin }) {
         formData.append("file", file);
 
         const uploadResponse = await fetchWithAuth(
-          "http://localhost:5000/api/notes/upload",
+          `${BACKEND_URL}/api/notes/upload`,
           {
             method: "POST",
             body: formData,
@@ -265,24 +265,21 @@ function UploadNotes({ user, isAdmin }) {
         const fileData = await uploadResponse.json();
 
         // Create note in database
-        const noteResponse = await fetchWithAuth(
-          "http://localhost:5000/api/notes",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              user: user._id,
-              title: file.name,
-              content: `Uploaded file: ${file.name}`,
-              subject: selectedSubject,
-              fileUrl: fileData.fileUrl,
-              fileName: fileData.fileName,
-              fileType: fileData.fileType,
-            }),
+        const noteResponse = await fetchWithAuth(`${BACKEND_URL}/api/notes`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({
+            user: user._id,
+            title: file.name,
+            content: `Uploaded file: ${file.name}`,
+            subject: selectedSubject,
+            fileUrl: fileData.fileUrl,
+            fileName: fileData.fileName,
+            fileType: fileData.fileType,
+          }),
+        });
 
         if (!noteResponse.ok) {
           throw new Error("Failed to save note");

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./Auth.css";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 function Signup({ onSignupSuccess, onBack, onSwitchToLogin }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +33,7 @@ function Signup({ onSignupSuccess, onBack, onSwitchToLogin }) {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/register", {
+      const response = await fetch(`${BACKEND_URL}/api/users/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
