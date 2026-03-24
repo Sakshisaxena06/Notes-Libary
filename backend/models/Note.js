@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const NoteSchema = new mongoose.Schema(
   {
@@ -74,4 +74,6 @@ NoteSchema.pre("save", function (next) {
   next();
 });
 
-module.exports = mongoose.model("Note", NoteSchema);
+const Note = mongoose.model("Note", NoteSchema);
+
+export default Note;

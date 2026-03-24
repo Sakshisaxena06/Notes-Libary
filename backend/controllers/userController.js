@@ -1,5 +1,5 @@
-const User = require("../models/User");
-const jwt = require("jsonwebtoken");
+import User from "../models/User.js";
+import jwt from "jsonwebtoken";
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -11,7 +11,7 @@ const generateToken = (id) => {
 // @desc    Register a new user
 // @route   POST /api/users/register
 // @access  Public
-const registerUser = async (req, res) => {
+export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -57,7 +57,7 @@ const registerUser = async (req, res) => {
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
-const authUser = async (req, res) => {
+export const authUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -84,7 +84,7 @@ const authUser = async (req, res) => {
 // @desc    Admin login
 // @route   POST /api/users/admin
 // @access  Public
-const adminLogin = async (req, res) => {
+export const adminLogin = async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -120,7 +120,7 @@ const adminLogin = async (req, res) => {
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private/Admin
-const getUsers = async (req, res) => {
+export const getUsers = async (req, res) => {
   try {
     const users = await User.find({}).select("-password");
     res.json(users);
@@ -132,7 +132,7 @@ const getUsers = async (req, res) => {
 // @desc    Update user profile (name, email, password)
 // @route   PUT /api/users/profile
 // @access  Private
-const updateUserProfile = async (req, res) => {
+export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
     const { name, email, currentPassword, newPassword } = req.body;
@@ -185,12 +185,4 @@ const updateUserProfile = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-module.exports = {
-  registerUser,
-  authUser,
-  adminLogin,
-  getUsers,
-  updateUserProfile,
 };

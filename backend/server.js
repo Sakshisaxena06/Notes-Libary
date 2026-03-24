@@ -1,12 +1,17 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const path = require("path");
-const connectDB = require("./config/db");
-const noteRoutes = require("./routes/noteRoutes");
-const userRoutes = require("./routes/userRoutes");
-const subjectRoutes = require("./routes/subjectRoutes");
-const { initDefaultSubjects } = require("./controllers/subjectController");
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import connectDB from "./config/db.js";
+import noteRoutes from "./routes/noteRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import subjectRoutes from "./routes/subjectRoutes.js";
+import { initDefaultSubjects } from "./controllers/subjectController.js";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load env vars
 dotenv.config();
@@ -43,8 +48,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong!" });
 });
 
-const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// ✅ IMPORTANT for Vercel (DO NOT use app.listen)
+export default app;

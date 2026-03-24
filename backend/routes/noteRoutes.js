@@ -1,9 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const {
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import {
   getNotes,
   getNotesByUser,
   getNoteById,
@@ -15,13 +15,13 @@ const {
   toggleFavorite,
   toggleSaved,
   uploadFile,
-} = require("../controllers/noteController");
-const { protect, admin } = require("../middleware/authMiddleware");
+} from "../controllers/noteController.js";
+import { protect, admin } from "../middleware/authMiddleware.js";
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, "../uploads");
+    const uploadDir = path.join(process.cwd(), "backend/uploads");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -107,4 +107,4 @@ router.put("/:id/save", toggleSaved);
 // @desc    Delete note
 router.delete("/:id", deleteNote);
 
-module.exports = router;
+export default router;

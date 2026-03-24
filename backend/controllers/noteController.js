@@ -1,12 +1,12 @@
-const mongoose = require("mongoose");
-const Note = require("../models/Note");
-const path = require("path");
-const fs = require("fs");
+import mongoose from "mongoose";
+import Note from "../models/Note.js";
+import path from "path";
+import fs from "fs";
 
 // @desc    Get all notes
 // @route   GET /api/notes
 // @access  Public
-const getNotes = async (req, res) => {
+export const getNotes = async (req, res) => {
   try {
     const notes = await Note.find({}).sort({ createdAt: -1 });
     res.json(notes);
@@ -18,7 +18,7 @@ const getNotes = async (req, res) => {
 // @desc    Get notes by user
 // @route   GET /api/notes/user/:userId
 // @access  Public
-const getNotesByUser = async (req, res) => {
+export const getNotesByUser = async (req, res) => {
   try {
     const notes = await Note.find({ user: req.params.userId }).sort({
       createdAt: -1,
@@ -32,7 +32,7 @@ const getNotesByUser = async (req, res) => {
 // @desc    Get single note
 // @route   GET /api/notes/:id
 // @access  Public
-const getNoteById = async (req, res) => {
+export const getNoteById = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (note) {
@@ -48,7 +48,7 @@ const getNoteById = async (req, res) => {
 // @desc    Create new note
 // @route   POST /api/notes
 // @access  Private
-const createNote = async (req, res) => {
+export const createNote = async (req, res) => {
   try {
     const {
       title,
@@ -88,7 +88,7 @@ const createNote = async (req, res) => {
 // @desc    Upload file
 // @route   POST /api/notes/upload
 // @access  Public
-const uploadFile = async (req, res) => {
+export const uploadFile = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -111,7 +111,7 @@ const uploadFile = async (req, res) => {
 // @desc    Update note
 // @route   PUT /api/notes/:id
 // @access  Public
-const updateNote = async (req, res) => {
+export const updateNote = async (req, res) => {
   try {
     const {
       title,
@@ -151,7 +151,7 @@ const updateNote = async (req, res) => {
 // @desc    Delete note
 // @route   DELETE /api/notes/:id?userId=xxx&isAdmin=true
 // @access  Public
-const deleteNote = async (req, res) => {
+export const deleteNote = async (req, res) => {
   try {
     const { userId, isAdmin } = req.query;
     const note = await Note.findById(req.params.id);
@@ -186,7 +186,7 @@ const deleteNote = async (req, res) => {
 // @desc    Get favorite notes
 // @route   GET /api/notes/favorites?userId=xxx
 // @access  Public
-const getFavoriteNotes = async (req, res) => {
+export const getFavoriteNotes = async (req, res) => {
   try {
     const { userId } = req.query;
 
@@ -209,7 +209,7 @@ const getFavoriteNotes = async (req, res) => {
 // @desc    Get saved notes
 // @route   GET /api/notes/saved
 // @access  Public
-const getSavedNotes = async (req, res) => {
+export const getSavedNotes = async (req, res) => {
   try {
     const notes = await Note.find({ isSaved: true }).sort({ createdAt: -1 });
     res.json(notes);
@@ -221,7 +221,7 @@ const getSavedNotes = async (req, res) => {
 // @desc    Toggle favorite
 // @route   PUT /api/notes/:id/favorite?userId=xxx
 // @access  Public
-const toggleFavorite = async (req, res) => {
+export const toggleFavorite = async (req, res) => {
   try {
     const { userId } = req.query;
     const note = await Note.findById(req.params.id);
@@ -259,7 +259,7 @@ const toggleFavorite = async (req, res) => {
 // @desc    Toggle saved
 // @route   PUT /api/notes/:id/save
 // @access  Public
-const toggleSaved = async (req, res) => {
+export const toggleSaved = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
 
@@ -273,18 +273,4 @@ const toggleSaved = async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
-};
-
-module.exports = {
-  getNotes,
-  getNotesByUser,
-  getNoteById,
-  createNote,
-  updateNote,
-  deleteNote,
-  getFavoriteNotes,
-  getSavedNotes,
-  toggleFavorite,
-  toggleSaved,
-  uploadFile,
 };

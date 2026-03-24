@@ -1,7 +1,7 @@
-const Subject = require("../models/Subject");
+import Subject from "../models/Subject.js";
 
 // Get all subjects
-exports.getSubjects = async (req, res) => {
+export const getSubjects = async (req, res) => {
   try {
     const subjects = await Subject.find().sort({ createdAt: 1 });
     res.json(subjects);
@@ -11,7 +11,7 @@ exports.getSubjects = async (req, res) => {
 };
 
 // Add a new subject (admin only)
-exports.addSubject = async (req, res) => {
+export const addSubject = async (req, res) => {
   try {
     const { name, icon } = req.body;
 
@@ -30,7 +30,7 @@ exports.addSubject = async (req, res) => {
 };
 
 // Delete a subject (admin only)
-exports.deleteSubject = async (req, res) => {
+export const deleteSubject = async (req, res) => {
   try {
     const subject = await Subject.findByIdAndDelete(req.params.id);
     if (!subject) {
@@ -43,7 +43,7 @@ exports.deleteSubject = async (req, res) => {
 };
 
 // Initialize default subjects if none exist
-exports.initDefaultSubjects = async () => {
+export const initDefaultSubjects = async () => {
   try {
     const count = await Subject.countDocuments();
     if (count === 0) {

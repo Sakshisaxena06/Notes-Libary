@@ -1,11 +1,11 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   getSubjects,
   addSubject,
   deleteSubject,
-} = require("../controllers/subjectController");
-const { protect, admin } = require("../middleware/authMiddleware");
+} from "../controllers/subjectController.js";
+import { protect, admin } from "../middleware/authMiddleware.js";
 
 // Get all subjects - accessible to all users
 router.get("/", getSubjects);
@@ -16,4 +16,4 @@ router.post("/", protect, admin, addSubject);
 // Delete a subject - admin only
 router.delete("/:id", protect, admin, deleteSubject);
 
-module.exports = router;
+export default router;

@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Backend API for Notes Application",
   "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
   },
   "keywords": [
     "notes",
