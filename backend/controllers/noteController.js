@@ -88,7 +88,7 @@ export const createNote = async (req, res) => {
   }
 };
 
-// @desc    Upload file to Cloudinary
+// @desc    Upload file (Cloudinary or local fallback)
 // @route   POST /api/notes/upload
 // @access  Private
 export const uploadFile = async (req, res) => {
@@ -97,26 +97,46 @@ export const uploadFile = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Upload to Cloudinary with folder organization
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "notes-app",
-      resource_type: "auto",
-      use_filename: true,
-      unique_filename: true,
-    });
+    // Check if Cloudinary is configured
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-    // Clean up local file after upload
-    if (req.file.path && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    // If Cloudinary is configured, use it
+    if (cloudName && apiKey && apiSecret && cloudName !== "your_cloud_name") {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "notes-app",
+        resource_type: "auto",
+        use_filename: true,
+        unique_filename: true,
+      });
+
+      // Clean up local file after upload
+      if (req.file.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
+      return res.json({
+        fileUrl: result.secure_url,
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+        cloudinaryId: result.public_id,
+      });
     }
 
+    // Fallback to local storage if Cloudinary is not configured
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const fileName = req.file.originalname;
+    const fileType = req.file.mimetype;
+
     res.json({
-      fileUrl: result.secure_url,
-      fileName: req.file.originalname,
-      fileType: req.file.mimetype,
-      cloudinaryId: result.public_id,
+      fileUrl,
+      fileName,
+      fileType,
+      cloudinaryId: null,
     });
   } catch (error) {
+    console.error("Upload error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -176,8 +196,12 @@ export const deleteNote = async (req, res) => {
       const isAdminBool = isAdmin === true || isAdmin === "true";
 
       if (isAdminBool) {
-        // Delete from Cloudinary if exists
-        if (note.cloudinaryId) {
+        // Delete from Cloudinary if exists and configured
+        if (
+          note.cloudinaryId &&
+          process.env.CLOUDINARY_CLOUD_NAME &&
+          process.env.CLOUDINARY_CLOUD_NAME !== "your_cloud_name"
+        ) {
           try {
             await cloudinary.uploader.destroy(note.cloudinaryId);
           } catch (cloudErr) {
@@ -190,8 +214,12 @@ export const deleteNote = async (req, res) => {
 
       // Check if user is the owner - can delete their own note
       if (userId && note.user.toString() === userId) {
-        // Delete from Cloudinary if exists
-        if (note.cloudinaryId) {
+        // Delete from Cloudinary if exists and configured
+        if (
+          note.cloudinaryId &&
+          process.env.CLOUDINARY_CLOUD_NAME &&
+          process.env.CLOUDINARY_CLOUD_NAME !== "your_cloud_name"
+        ) {
           try {
             await cloudinary.uploader.destroy(note.cloudinaryId);
           } catch (cloudErr) {

@@ -23,7 +23,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: "*", // Allow all origins for now
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -56,5 +56,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong!" });
 });
 
-// ✅ IMPORTANT for Vercel (DO NOT use app.listen)
+// Only start server if running locally (not on Vercel)
+const PORT = process.env.PORT || 5000;
+if (process.env.VERCEL !== "true") {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
 export default app;

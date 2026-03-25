@@ -206,8 +206,14 @@ function UploadNotes({ user, isAdmin }) {
     let fileURL, fileName, fileType;
 
     if (file.fileUrl) {
-      // It's an uploaded file from the backend (Cloudinary returns full URL)
-      fileURL = file.fileUrl;
+      // Check if it's a full URL (Cloudinary) or relative path (local storage)
+      if (file.fileUrl.startsWith("http")) {
+        // Cloudinary full URL
+        fileURL = file.fileUrl;
+      } else {
+        // Local storage relative path - prepend backend URL
+        fileURL = `${BACKEND_URL}${file.fileUrl}`;
+      }
       fileName = file.name;
       fileType = file.type;
     } else {
