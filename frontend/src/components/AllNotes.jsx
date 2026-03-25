@@ -17,8 +17,24 @@ function AllNotes({ user, isAdmin }) {
   const [newSubjectIcon, setNewSubjectIcon] = useState("📄");
 
   useEffect(() => {
-    fetchNotes();
-    fetchSubjects();
+    // Fetch notes and subjects in parallel for faster loading
+    Promise.all([
+      fetchWithAuth(`${BACKEND_URL}/api/notes`),
+      fetchWithAuth(`${BACKEND_URL}/api/subjects`),
+    ])
+      .then(([notesRes, subjectsRes]) => {
+        Promise.all([notesRes.json(), subjectsRes.json()]).then(
+          ([notesData, subjectsData]) => {
+            setNotes(notesData);
+            setSubjects(subjectsData);
+            setLoading(false);
+          },
+        );
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      });
   }, []);
 
   // Reset search when subject changes

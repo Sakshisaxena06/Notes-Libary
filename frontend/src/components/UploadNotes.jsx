@@ -21,10 +21,46 @@ function UploadNotes({ user, isAdmin }) {
 
   // Load uploaded files from backend on mount
   useEffect(() => {
-    if (user?._id) {
-      fetchUserNotes();
-    }
-    fetchSubjects();
+    // Fetch subjects and user notes in parallel for faster loading
+    const fetchData = async () => {
+      const promises = [];
+
+      // Always fetch subjects
+      promises.push(
+        fetchWithAuth(`${BACKEND_URL}/api/subjects`).then((res) => res.json()),
+      );
+
+      // Fetch user notes if logged in
+      if (user?._id) {
+        promises.push(
+          fetchWithAuth(`${BACKEND_URL}/api/notes/user/${user._id}`).then(
+            (res) => res.json(),
+          ),
+        );
+      }
+
+      const results = await Promise.all(promises);
+
+      // Set subjects
+      setSubjects(results[0] || []);
+
+      // Set user notes if available
+      if (user?._id && results[1]) {
+        const filesWithData = (results[1] || [])
+          .filter((note) => note.fileUrl)
+          .map((note) => ({
+            name: note.fileName,
+            size: 0,
+            type: note.fileType,
+            fileUrl: note.fileUrl,
+            _id: note._id,
+            isFavorite: note.isFavorite || false,
+          }));
+        setUploadedFiles(filesWithData);
+      }
+    };
+
+    fetchData().catch(console.error);
   }, [user]);
 
   const fetchSubjects = async () => {

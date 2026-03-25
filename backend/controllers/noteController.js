@@ -61,6 +61,7 @@ export const createNote = async (req, res) => {
       fileUrl,
       fileName,
       fileType,
+      cloudinaryId,
     } = req.body;
 
     // Get user from authenticated request

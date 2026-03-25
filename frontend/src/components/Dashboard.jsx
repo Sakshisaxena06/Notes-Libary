@@ -29,50 +29,49 @@ function Dashboard({ isAdmin, user }) {
 
   const fetchStats = async () => {
     try {
-      // Fetch ALL notes for Total Notes
-      const allNotesResponse = await fetchWithAuth(`${BACKEND_URL}/api/notes`);
-      const allNotesData = await allNotesResponse.json();
+      // Fetch all data in parallel for faster loading
+      const promises = [];
 
-      // For user's favorites and uploads
-      let userFavoriteCount = 0;
-      let userUploadedCount = 0;
+      // Always fetch all notes
+      promises.push(
+        fetchWithAuth(`${BACKEND_URL}/api/notes`).then((res) => res.json()),
+      );
 
-      if (user?._id) {
-        // Get user's uploaded notes count
-        const userNotesResponse = await fetchWithAuth(
-          `${BACKEND_URL}/api/notes/user/${user._id}`,
-        );
-        if (userNotesResponse.ok) {
-          const userNotesData = await userNotesResponse.json();
-          userUploadedCount =
-            userNotesData.filter((n) => n.fileUrl).length || 0;
-        }
-
-        // Get user's favorites count using the favorites endpoint
-        const favoritesResponse = await fetchWithAuth(
-          `${BACKEND_URL}/api/notes/favorites?userId=${user._id}`,
-        );
-        if (favoritesResponse.ok) {
-          const favoritesData = await favoritesResponse.json();
-          userFavoriteCount = favoritesData.length || 0;
-        }
-      }
-
-      // Get total users count for admin
-      let totalUsersCount = 0;
+      // Fetch users if admin
       if (isAdmin) {
-        const usersResponse = await fetchWithAuth(`${BACKEND_URL}/api/users`);
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          totalUsersCount = usersData.length || 0;
-        }
+        promises.push(
+          fetchWithAuth(`${BACKEND_URL}/api/users`).then((res) => res.json()),
+        );
       }
+
+      // Fetch user data if logged in
+      if (user?._id) {
+        promises.push(
+          fetchWithAuth(`${BACKEND_URL}/api/notes/user/${user._id}`).then(
+            (res) => res.json(),
+          ),
+        );
+        promises.push(
+          fetchWithAuth(
+            `${BACKEND_URL}/api/notes/favorites?userId=${user._id}`,
+          ).then((res) => res.json()),
+        );
+      }
+
+      // Wait for all requests in parallel
+      const results = await Promise.all(promises);
+
+      // Parse results
+      let allNotesData = results[0] || [];
+      let usersData = isAdmin ? results[1] || [] : [];
+      let userNotesData = user?._id ? results[2] || [] : [];
+      let favoritesData = user?._id ? results[3] || [] : [];
 
       setStats({
         totalNotes: allNotesData.length || 0,
-        favoriteNotes: userFavoriteCount,
-        uploadedNotes: userUploadedCount,
-        totalUsers: totalUsersCount,
+        favoriteNotes: favoritesData.length || 0,
+        uploadedNotes: userNotesData.filter((n) => n.fileUrl).length || 0,
+        totalUsers: usersData.length || 0,
       });
       setLoading(false);
     } catch (error) {
