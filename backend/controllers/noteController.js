@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Note from "../models/Note.js";
 import path from "path";
 import fs from "fs";
+import cloudinary from "../config/cloudinary.js";
 
 // @desc    Get all notes
 // @route   GET /api/notes
@@ -76,6 +77,7 @@ export const createNote = async (req, res) => {
       fileUrl,
       fileName,
       fileType,
+      cloudinaryId,
     });
 
     const createdNote = await note.save();
@@ -85,23 +87,33 @@ export const createNote = async (req, res) => {
   }
 };
 
-// @desc    Upload file
+// @desc    Upload file to Cloudinary
 // @route   POST /api/notes/upload
-// @access  Public
+// @access  Private
 export const uploadFile = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const fileUrl = `/uploads/${req.file.filename}`;
-    const fileName = req.file.originalname;
-    const fileType = req.file.mimetype;
+    // Upload to Cloudinary with folder organization
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "notes-app",
+      resource_type: "auto",
+      use_filename: true,
+      unique_filename: true,
+    });
+
+    // Clean up local file after upload
+    if (req.file.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
 
     res.json({
-      fileUrl,
-      fileName,
-      fileType,
+      fileUrl: result.secure_url,
+      fileName: req.file.originalname,
+      fileType: req.file.mimetype,
+      cloudinaryId: result.public_id,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -123,6 +135,7 @@ export const updateNote = async (req, res) => {
       fileUrl,
       fileName,
       fileType,
+      cloudinaryId,
     } = req.body;
 
     const note = await Note.findById(req.params.id);
@@ -137,6 +150,7 @@ export const updateNote = async (req, res) => {
       note.fileUrl = fileUrl || note.fileUrl;
       note.fileName = fileName || note.fileName;
       note.fileType = fileType || note.fileType;
+      note.cloudinaryId = cloudinaryId || note.cloudinaryId;
 
       const updatedNote = await note.save();
       res.json(updatedNote);
@@ -161,12 +175,28 @@ export const deleteNote = async (req, res) => {
       const isAdminBool = isAdmin === true || isAdmin === "true";
 
       if (isAdminBool) {
+        // Delete from Cloudinary if exists
+        if (note.cloudinaryId) {
+          try {
+            await cloudinary.uploader.destroy(note.cloudinaryId);
+          } catch (cloudErr) {
+            console.error("Error deleting from Cloudinary:", cloudErr);
+          }
+        }
         await note.deleteOne();
         return res.json({ message: "Note removed by admin" });
       }
 
       // Check if user is the owner - can delete their own note
       if (userId && note.user.toString() === userId) {
+        // Delete from Cloudinary if exists
+        if (note.cloudinaryId) {
+          try {
+            await cloudinary.uploader.destroy(note.cloudinaryId);
+          } catch (cloudErr) {
+            console.error("Error deleting from Cloudinary:", cloudErr);
+          }
+        }
         await note.deleteOne();
         return res.json({ message: "Note removed" });
       }

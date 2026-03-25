@@ -54,6 +54,10 @@ const NoteSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    cloudinaryId: {
+      type: String,
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

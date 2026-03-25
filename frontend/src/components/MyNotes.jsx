@@ -110,15 +110,9 @@ function MyNotes({ user, isAdmin }) {
             </button>
             <h3>{selectedNote.title || selectedNote.fileName}</h3>
             {selectedNote.fileType?.startsWith("image/") ? (
-              <img
-                src={`${BACKEND_URL}${selectedNote.fileUrl}`}
-                alt={selectedNote.title}
-              />
+              <img src={selectedNote.fileUrl} alt={selectedNote.title} />
             ) : selectedNote.fileType === "application/pdf" ? (
-              <iframe
-                src={`${BACKEND_URL}${selectedNote.fileUrl}`}
-                title={selectedNote.title}
-              />
+              <iframe src={selectedNote.fileUrl} title={selectedNote.title} />
             ) : (
               <div className="preview-not-available">
                 <span className="file-icon">
@@ -126,7 +120,7 @@ function MyNotes({ user, isAdmin }) {
                 </span>
                 <p>Preview not available</p>
                 <a
-                  href={`${BACKEND_URL}${selectedNote.fileUrl}`}
+                  href={selectedNote.fileUrl}
                   download={selectedNote.fileName}
                   className="download-link"
                 >

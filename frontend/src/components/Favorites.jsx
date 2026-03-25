@@ -110,15 +110,9 @@ function Favorites({ user, isAdmin }) {
             </button>
             <h3>{selectedNote.title || selectedNote.fileName}</h3>
             {selectedNote.fileType?.startsWith("image/") ? (
-              <img
-                src={`${BACKEND_URL}${selectedNote.fileUrl}`}
-                alt={selectedNote.title}
-              />
+              <img src={selectedNote.fileUrl} alt={selectedNote.title} />
             ) : selectedNote.fileType === "application/pdf" ? (
-              <iframe
-                src={`${BACKEND_URL}${selectedNote.fileUrl}`}
-                title={selectedNote.title}
-              />
+              <iframe src={selectedNote.fileUrl} title={selectedNote.title} />
             ) : (
               <div className="preview-not-available">
                 <span className="file-icon">
@@ -126,7 +120,7 @@ function Favorites({ user, isAdmin }) {
                 </span>
                 <p>Preview not available</p>
                 <a
-                  href={`${BACKEND_URL}${selectedNote.fileUrl}`}
+                  href={selectedNote.fileUrl}
                   download={selectedNote.fileName}
                   className="download-link"
                 >
@@ -159,7 +153,7 @@ function Favorites({ user, isAdmin }) {
                 <div className="note-file-preview">
                   {note.fileType?.startsWith("image/") ? (
                     <a
-                      href={`${BACKEND_URL}${note.fileUrl}`}
+                      href={note.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="file-link"
@@ -176,7 +170,7 @@ function Favorites({ user, isAdmin }) {
                     </div>
                   ) : (
                     <a
-                      href={`${BACKEND_URL}${note.fileUrl}`}
+                      href={note.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="file-link"

@@ -349,7 +349,7 @@ function AllNotes({ user, isAdmin }) {
                     <div className="note-file-preview">
                       {note.fileType?.startsWith("image/") ? (
                         <a
-                          href={`${BACKEND_URL}${note.fileUrl}`}
+                          href={note.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="file-link"
@@ -358,7 +358,7 @@ function AllNotes({ user, isAdmin }) {
                         </a>
                       ) : note.fileType === "application/pdf" ? (
                         <a
-                          href={`${BACKEND_URL}${note.fileUrl}`}
+                          href={note.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="file-link"
@@ -367,7 +367,7 @@ function AllNotes({ user, isAdmin }) {
                         </a>
                       ) : (
                         <a
-                          href={`${BACKEND_URL}${note.fileUrl}`}
+                          href={note.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="file-link"

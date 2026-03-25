@@ -170,8 +170,8 @@ function UploadNotes({ user, isAdmin }) {
     let fileURL, fileName, fileType;
 
     if (file.fileUrl) {
-      // It's an uploaded file from the backend
-      fileURL = `${BACKEND_URL}${file.fileUrl}`;
+      // It's an uploaded file from the backend (Cloudinary returns full URL)
+      fileURL = file.fileUrl;
       fileName = file.name;
       fileType = file.type;
     } else {
@@ -278,6 +278,7 @@ function UploadNotes({ user, isAdmin }) {
             fileUrl: fileData.fileUrl,
             fileName: fileData.fileName,
             fileType: fileData.fileType,
+            cloudinaryId: fileData.cloudinaryId,
           }),
         });
 
