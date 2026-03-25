@@ -97,46 +97,29 @@ export const uploadFile = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Check if Cloudinary is configured
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "notes-app",
+          resource_type: "auto",
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
 
-    // If Cloudinary is configured, use it
-    if (cloudName && apiKey && apiSecret && cloudName !== "your_cloud_name") {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "notes-app",
-        resource_type: "auto",
-        use_filename: true,
-        unique_filename: true,
-      });
-
-      // Clean up local file after upload
-      if (req.file.path && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-
-      return res.json({
-        fileUrl: result.secure_url,
-        fileName: req.file.originalname,
-        fileType: req.file.mimetype,
-        cloudinaryId: result.public_id,
-      });
-    }
-
-    // Fallback to local storage if Cloudinary is not configured
-    const fileUrl = `/uploads/${req.file.filename}`;
-    const fileName = req.file.originalname;
-    const fileType = req.file.mimetype;
+      stream.end(req.file.buffer);
+    });
 
     res.json({
-      fileUrl,
-      fileName,
-      fileType,
-      cloudinaryId: null,
+      fileUrl: result.secure_url,
+      fileName: req.file.originalname,
+      fileType: req.file.mimetype,
+      cloudinaryId: result.public_id,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.log(error);
     res.status(500).json({ message: error.message });
   }
 };

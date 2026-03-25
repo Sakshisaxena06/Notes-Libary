@@ -1,8 +1,6 @@
 import express from "express";
 const router = express.Router();
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import upload from "../middleware/uploadMiddleware.js";
 import {
   getNotes,
   getNotesByUser,
@@ -17,42 +15,6 @@ import {
   uploadFile,
 } from "../controllers/noteController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
-
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(process.cwd(), "backend/uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
-  fileFilter: function (req, file, cb) {
-    try {
-      const filetypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt|md/;
-      const extname = filetypes.test(
-        path.extname(file.originalname).toLowerCase(),
-      );
-      const mimetype = filetypes.test(file.mimetype);
-      if (extname && mimetype) {
-        return cb(null, true);
-      } else {
-        cb(new Error("Only images and documents are allowed"));
-      }
-    } catch (err) {
-      cb(err);
-    }
-  },
-});
 
 // @route   GET /api/notes
 // @desc    Get all notes
