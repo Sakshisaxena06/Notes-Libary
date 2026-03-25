@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchWithAuth } from "../utils/api";
 import "./PageContent.css";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 function MyNotes({ user, isAdmin }) {
   const [notes, setNotes] = useState([]);
@@ -20,7 +20,7 @@ function MyNotes({ user, isAdmin }) {
   const fetchUserNotes = async () => {
     try {
       const response = await fetchWithAuth(
-        `http://localhost:5000/api/notes/user/${user._id}`,
+        `${BACKEND_URL}/api/notes/user/${user._id}`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -41,7 +41,7 @@ function MyNotes({ user, isAdmin }) {
       if (isAdmin) params.append("isAdmin", "true");
 
       const response = await fetchWithAuth(
-        `http://localhost:5000/api/notes/${id}?${params.toString()}`,
+        `${BACKEND_URL}/api/notes/${id}?${params.toString()}`,
         {
           method: "DELETE",
         },
@@ -62,8 +62,8 @@ function MyNotes({ user, isAdmin }) {
     try {
       // Pass userId to verify ownership
       const url = user?._id
-        ? `http://localhost:5000/api/notes/${id}/favorite?userId=${user._id}`
-        : `http://localhost:5000/api/notes/${id}/favorite`;
+        ? `${BACKEND_URL}/api/notes/${id}/favorite?userId=${user._id}`
+        : `${BACKEND_URL}/api/notes/${id}/favorite`;
 
       const response = await fetchWithAuth(url, {
         method: "PUT",

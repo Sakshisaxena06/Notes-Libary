@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchWithAuth } from "../utils/api";
 import "./PageContent.css";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 function Favorites({ user, isAdmin }) {
   const [favorites, setFavorites] = useState([]);
@@ -17,8 +17,8 @@ function Favorites({ user, isAdmin }) {
     try {
       // Pass userId to backend for filtering
       const url = user?._id
-        ? `http://localhost:5000/api/notes/favorites?userId=${user._id}`
-        : "http://localhost:5000/api/notes/favorites";
+        ? `${BACKEND_URL}/api/notes/favorites?userId=${user._id}`
+        : `${BACKEND_URL}/api/notes/favorites`;
 
       const response = await fetchWithAuth(url);
       if (response.ok) {
@@ -36,8 +36,8 @@ function Favorites({ user, isAdmin }) {
     try {
       // Pass userId to verify ownership
       const url = user?._id
-        ? `http://localhost:5000/api/notes/${id}/favorite?userId=${user._id}`
-        : `http://localhost:5000/api/notes/${id}/favorite`;
+        ? `${BACKEND_URL}/api/notes/${id}/favorite?userId=${user._id}`
+        : `${BACKEND_URL}/api/notes/${id}/favorite`;
 
       const response = await fetchWithAuth(url, {
         method: "PUT",
@@ -58,7 +58,7 @@ function Favorites({ user, isAdmin }) {
       if (isAdmin) params.append("isAdmin", "true");
 
       const response = await fetchWithAuth(
-        `http://localhost:5000/api/notes/${id}?${params.toString()}`,
+        `${BACKEND_URL}/api/notes/${id}?${params.toString()}`,
         {
           method: "DELETE",
         },
