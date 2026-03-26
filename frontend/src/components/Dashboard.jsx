@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchWithAuth } from "../utils/api";
 import "./PageContent.css";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = "http://localhost:5000";
 
 function Dashboard({ isAdmin, user }) {
   const [stats, setStats] = useState({
@@ -29,49 +29,54 @@ function Dashboard({ isAdmin, user }) {
 
   const fetchStats = async () => {
     try {
-      // Fetch all data in parallel for faster loading
-      const promises = [];
-
-      // Always fetch all notes
-      promises.push(
-        fetchWithAuth(`${BACKEND_URL}/api/notes`).then((res) => res.json()),
+      // Fetch ALL notes for Total Notes
+      const allNotesResponse = await fetchWithAuth(
+        "http://localhost:5000/api/notes",
       );
+      const allNotesData = await allNotesResponse.json();
 
-      // Fetch users if admin
-      if (isAdmin) {
-        promises.push(
-          fetchWithAuth(`${BACKEND_URL}/api/users`).then((res) => res.json()),
-        );
-      }
+      // For user's favorites and uploads
+      let userFavoriteCount = 0;
+      let userUploadedCount = 0;
 
-      // Fetch user data if logged in
       if (user?._id) {
-        promises.push(
-          fetchWithAuth(`${BACKEND_URL}/api/notes/user/${user._id}`).then(
-            (res) => res.json(),
-          ),
+        // Get user's uploaded notes count
+        const userNotesResponse = await fetchWithAuth(
+          `http://localhost:5000/api/notes/user/${user._id}`,
         );
-        promises.push(
-          fetchWithAuth(
-            `${BACKEND_URL}/api/notes/favorites?userId=${user._id}`,
-          ).then((res) => res.json()),
+        if (userNotesResponse.ok) {
+          const userNotesData = await userNotesResponse.json();
+          userUploadedCount =
+            userNotesData.filter((n) => n.fileUrl).length || 0;
+        }
+
+        // Get user's favorites count using the favorites endpoint
+        const favoritesResponse = await fetchWithAuth(
+          `http://localhost:5000/api/notes/favorites?userId=${user._id}`,
         );
+        if (favoritesResponse.ok) {
+          const favoritesData = await favoritesResponse.json();
+          userFavoriteCount = favoritesData.length || 0;
+        }
       }
 
-      // Wait for all requests in parallel
-      const results = await Promise.all(promises);
-
-      // Parse results
-      let allNotesData = results[0] || [];
-      let usersData = isAdmin ? results[1] || [] : [];
-      let userNotesData = user?._id ? results[2] || [] : [];
-      let favoritesData = user?._id ? results[3] || [] : [];
+      // Get total users count for admin
+      let totalUsersCount = 0;
+      if (isAdmin) {
+        const usersResponse = await fetchWithAuth(
+          "http://localhost:5000/api/users",
+        );
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          totalUsersCount = usersData.length || 0;
+        }
+      }
 
       setStats({
         totalNotes: allNotesData.length || 0,
-        favoriteNotes: favoritesData.length || 0,
-        uploadedNotes: userNotesData.filter((n) => n.fileUrl).length || 0,
-        totalUsers: usersData.length || 0,
+        favoriteNotes: userFavoriteCount,
+        uploadedNotes: userUploadedCount,
+        totalUsers: totalUsersCount,
       });
       setLoading(false);
     } catch (error) {
