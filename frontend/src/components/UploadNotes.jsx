@@ -8,7 +8,6 @@ function UploadNotes({ user, isAdmin }) {
   const [files, setFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [subjects, setSubjects] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -73,7 +72,7 @@ function UploadNotes({ user, isAdmin }) {
       fileType = file.type;
     }
 
-    // Open in new tab instead of showing preview modal
+    // Open in new tab
     window.open(fileURL, "_blank", "noopener,noreferrer");
   };
 
@@ -100,27 +99,7 @@ function UploadNotes({ user, isAdmin }) {
     }
   };
 
-  // Handle drag and drop
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      setFiles((prev) => [...prev, ...droppedFiles]);
-    }
-  };
-
-  // Upload file to backend and create a note
+  // Upload file to backend and create a public note
   const handleUpload = async (file, subject) => {
     setLoading(true);
     try {
@@ -142,7 +121,7 @@ function UploadNotes({ user, isAdmin }) {
 
       const uploadData = await uploadResponse.json();
 
-      // Step 2: Create a note with the file info
+      // Step 2: Create a note with the file info (will be visible to all)
       const noteData = {
         title: file.name,
         content: `Uploaded file: ${file.name}`,
@@ -337,28 +316,24 @@ function UploadNotes({ user, isAdmin }) {
         </select>
       </div>
 
-      {/* Drag and Drop Area */}
-      <div
-        className={`upload-area ${isDragging ? "dragging" : ""}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-      >
+      {/* File Input Area */}
+      <div className="upload-area">
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileSelect}
           multiple
           accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
+          id="file-upload"
           style={{ display: "none" }}
         />
-        <div className="upload-icon">📁</div>
-        <p>Drag & drop files here or click to browse</p>
-        <p className="upload-hint">Supports PDF, DOC, DOCX, TXT, Images</p>
+        <label htmlFor="file-upload" className="file-label">
+          📁 Choose Files
+        </label>
+        <p className="upload-subtitle">Supports PDF, DOC, DOCX, TXT, Images</p>
       </div>
 
-      {/* Selected Files List */}
+      {/* Selected Files to Upload */}
       {files.length > 0 && (
         <div className="selected-files">
           <h3>Files to Upload ({files.length})</h3>
