@@ -5,8 +5,6 @@ import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 
 // @desc    Get all notes
-// @route   GET /api/notes
-// @access  Public
 export const getNotes = async (req, res) => {
   try {
     const notes = await Note.find({}).sort({ createdAt: -1 });
@@ -17,8 +15,6 @@ export const getNotes = async (req, res) => {
 };
 
 // @desc    Get notes by user
-// @route   GET /api/notes/user/:userId
-// @access  Public
 export const getNotesByUser = async (req, res) => {
   try {
     const notes = await Note.find({ user: req.params.userId }).sort({
@@ -31,8 +27,6 @@ export const getNotesByUser = async (req, res) => {
 };
 
 // @desc    Get single note
-// @route   GET /api/notes/:id
-// @access  Public
 export const getNoteById = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
@@ -47,8 +41,6 @@ export const getNoteById = async (req, res) => {
 };
 
 // @desc    Create new note
-// @route   POST /api/notes
-// @access  Private
 export const createNote = async (req, res) => {
   try {
     const {
@@ -64,7 +56,6 @@ export const createNote = async (req, res) => {
       cloudinaryId,
     } = req.body;
 
-    // Get user from authenticated request
     const userId = req.user ? req.user._id : null;
 
     const note = new Note({
@@ -88,9 +79,7 @@ export const createNote = async (req, res) => {
   }
 };
 
-// @desc    Upload file (Cloudinary or local fallback)
-// @route   POST /api/notes/upload
-// @access  Private
+// ✅ ✅ FIXED UPLOAD FUNCTION (MAIN CHANGE)
 export const uploadFile = async (req, res) => {
   try {
     if (!req.file) {
@@ -101,7 +90,8 @@ export const uploadFile = async (req, res) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: "notes-app",
-          resource_type: "auto",
+          resource_type: "auto", // supports PDF, images, docs
+          type: "upload", // ✅ FIX → makes file PUBLIC
         },
         (error, result) => {
           if (error) reject(error);
@@ -125,8 +115,6 @@ export const uploadFile = async (req, res) => {
 };
 
 // @desc    Update note
-// @route   PUT /api/notes/:id
-// @access  Public
 export const updateNote = async (req, res) => {
   try {
     const {
@@ -167,53 +155,27 @@ export const updateNote = async (req, res) => {
 };
 
 // @desc    Delete note
-// @route   DELETE /api/notes/:id?userId=xxx&isAdmin=true
-// @access  Public
 export const deleteNote = async (req, res) => {
   try {
     const { userId, isAdmin } = req.query;
     const note = await Note.findById(req.params.id);
 
     if (note) {
-      // Check if user is admin (can be string "true" or boolean true)
       const isAdminBool = isAdmin === true || isAdmin === "true";
 
-      if (isAdminBool) {
-        // Delete from Cloudinary if exists and configured
-        if (
-          note.cloudinaryId &&
-          process.env.CLOUDINARY_CLOUD_NAME &&
-          process.env.CLOUDINARY_CLOUD_NAME !== "your_cloud_name"
-        ) {
+      if (isAdminBool || (userId && note.user.toString() === userId)) {
+        if (note.cloudinaryId) {
           try {
             await cloudinary.uploader.destroy(note.cloudinaryId);
-          } catch (cloudErr) {
-            console.error("Error deleting from Cloudinary:", cloudErr);
+          } catch (err) {
+            console.error("Cloudinary delete error:", err);
           }
         }
-        await note.deleteOne();
-        return res.json({ message: "Note removed by admin" });
-      }
 
-      // Check if user is the owner - can delete their own note
-      if (userId && note.user.toString() === userId) {
-        // Delete from Cloudinary if exists and configured
-        if (
-          note.cloudinaryId &&
-          process.env.CLOUDINARY_CLOUD_NAME &&
-          process.env.CLOUDINARY_CLOUD_NAME !== "your_cloud_name"
-        ) {
-          try {
-            await cloudinary.uploader.destroy(note.cloudinaryId);
-          } catch (cloudErr) {
-            console.error("Error deleting from Cloudinary:", cloudErr);
-          }
-        }
         await note.deleteOne();
         return res.json({ message: "Note removed" });
       }
 
-      // User is not authorized to delete this note
       return res
         .status(403)
         .json({ message: "Not authorized to delete this note" });
@@ -226,13 +188,10 @@ export const deleteNote = async (req, res) => {
 };
 
 // @desc    Get favorite notes
-// @route   GET /api/notes/favorites?userId=xxx
-// @access  Public
 export const getFavoriteNotes = async (req, res) => {
   try {
     const { userId } = req.query;
 
-    // If userId is provided, filter by favoritedBy array
     if (userId) {
       const notes = await Note.find({
         favoritedBy: new mongoose.Types.ObjectId(userId),
@@ -240,8 +199,9 @@ export const getFavoriteNotes = async (req, res) => {
       return res.json(notes);
     }
 
-    // Otherwise return all favorite notes
-    const notes = await Note.find({ isFavorite: true }).sort({ createdAt: -1 });
+    const notes = await Note.find({ isFavorite: true }).sort({
+      createdAt: -1,
+    });
     res.json(notes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -249,11 +209,11 @@ export const getFavoriteNotes = async (req, res) => {
 };
 
 // @desc    Get saved notes
-// @route   GET /api/notes/saved
-// @access  Public
 export const getSavedNotes = async (req, res) => {
   try {
-    const notes = await Note.find({ isSaved: true }).sort({ createdAt: -1 });
+    const notes = await Note.find({ isSaved: true }).sort({
+      createdAt: -1,
+    });
     res.json(notes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -261,8 +221,6 @@ export const getSavedNotes = async (req, res) => {
 };
 
 // @desc    Toggle favorite
-// @route   PUT /api/notes/:id/favorite?userId=xxx
-// @access  Public
 export const toggleFavorite = async (req, res) => {
   try {
     const { userId } = req.query;
@@ -274,16 +232,14 @@ export const toggleFavorite = async (req, res) => {
       }
 
       const userIdObj = new mongoose.Types.ObjectId(userId);
-      const favoriteIndex = note.favoritedBy.findIndex(
-        (id) => id.toString() === userId,
+      const index = note.favoritedBy.findIndex(
+        (id) => id.toString() === userId
       );
 
-      if (favoriteIndex > -1) {
-        // User already favorited - remove from favorites
-        note.favoritedBy.splice(favoriteIndex, 1);
+      if (index > -1) {
+        note.favoritedBy.splice(index, 1);
         note.isFavorite = note.favoritedBy.length > 0;
       } else {
-        // Add user to favorites
         note.favoritedBy.push(userIdObj);
         note.isFavorite = true;
       }
@@ -299,8 +255,6 @@ export const toggleFavorite = async (req, res) => {
 };
 
 // @desc    Toggle saved
-// @route   PUT /api/notes/:id/save
-// @access  Public
 export const toggleSaved = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
