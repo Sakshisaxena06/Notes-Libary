@@ -18,27 +18,39 @@ connectDB();
 
 const app = express();
 
+// ✅ FIXED CORS CONFIG
 const corsOptions = {
-  origin: "*",
+  origin: [
+    "https://notes-libary-jbp6.vercel.app", // your frontend (deployed)
+    "http://localhost:5173", // local frontend
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
+
+// ✅ handle preflight requests (VERY IMPORTANT)
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Routes
 app.use("/api/notes", noteRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/subjects", subjectRoutes);
 
+// Initialize default subjects
 initDefaultSubjects();
 
+// Test route
 app.get("/", (req, res) => {
   res.send("Notes API running");
 });
 
+// Error handler
 app.use((err, req, res, next) => {
   console.log(err);
   res.status(500).json({ message: "Error" });
@@ -46,9 +58,10 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+// Run server locally only
 if (process.env.VERCEL !== "true") {
   app.listen(PORT, () => {
-    console.log("Server running");
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
