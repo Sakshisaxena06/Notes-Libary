@@ -56,10 +56,10 @@ export const createNote = async (req, res) => {
       cloudinaryId,
     } = req.body;
 
-    const userId = req.user ? req.user._id : null;
+    const userId = req.user ? req.user._id : undefined;
 
     const note = new Note({
-      user: userId,
+      user: userId || undefined, // Will be undefined instead of null if not provided
       title,
       content,
       category: category || "general",
@@ -96,7 +96,7 @@ export const uploadFile = async (req, res) => {
         (error, result) => {
           if (error) reject(error);
           else resolve(result);
-        }
+        },
       );
 
       stream.end(req.file.buffer);
@@ -233,7 +233,7 @@ export const toggleFavorite = async (req, res) => {
 
       const userIdObj = new mongoose.Types.ObjectId(userId);
       const index = note.favoritedBy.findIndex(
-        (id) => id.toString() === userId
+        (id) => id.toString() === userId,
       );
 
       if (index > -1) {

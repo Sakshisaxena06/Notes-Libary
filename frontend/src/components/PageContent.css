@@ -90,6 +90,40 @@
 /* Upload Area */
 .upload-area {
   margin-top: 24px;
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.upload-area:hover {
+  border-color: #e94560;
+  background: rgba(233, 69, 96, 0.05);
+}
+
+.upload-area.dragging {
+  border-color: #e94560;
+  background: rgba(233, 69, 96, 0.1);
+}
+
+.upload-area .upload-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.upload-area p {
+  color: #666;
+  font-size: 16px;
+  margin: 8px 0;
+}
+
+.upload-area .upload-hint {
+  color: #999;
+  font-size: 14px;
 }
 
 .upload-box {
@@ -1770,4 +1804,129 @@
 .profile-settings-card .logout-btn:hover {
   background: #d63d56;
   transform: translateY(-2px);
+}
+
+/* Selected Files to Upload */
+.selected-files {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selected-files h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #1a1a2e;
+}
+
+.selected-files .file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.selected-files .file-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.selected-files .file-item .file-icon {
+  font-size: 24px;
+}
+
+.selected-files .file-item .file-name {
+  flex: 1;
+  color: #333;
+  font-size: 14px;
+}
+
+.selected-files .file-item .file-size {
+  color: #666;
+  font-size: 12px;
+}
+
+.selected-files .remove-file-btn {
+  background: none;
+  border: none;
+  color: #e94560;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.selected-files .remove-file-btn:hover {
+  background: rgba(233, 69, 96, 0.1);
+}
+
+.selected-files .upload-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.selected-files .upload-btn:hover {
+  background: #5568d3;
+}
+
+.selected-files .upload-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* File Card Actions in UploadNotes */
+.uploaded-files .file-card {
+  cursor: pointer;
+}
+
+.uploaded-files .file-card-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.uploaded-files .file-card-name {
+  color: #333;
+  font-size: 12px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  margin-bottom: 8px;
+}
+
+.uploaded-files .file-card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.uploaded-files .file-card-actions button {
+  background: #f5f5f5;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.uploaded-files .file-card-actions button:hover {
+  background: #e0e0e0;
+}
+
+.uploaded-files .favorite-btn.active {
+  color: #f59e0b;
 }

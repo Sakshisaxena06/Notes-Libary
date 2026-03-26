@@ -28,8 +28,8 @@ router.get("/user/:userId", protect, getNotesByUser);
 
 // @route   POST /api/notes/upload
 // @desc    Upload file
-// @access  Private
-router.post("/upload", protect, upload.single("file"), uploadFile);
+// @access  Public (anyone can upload)
+router.post("/upload", upload.single("file"), uploadFile);
 
 // @route   GET /api/notes/favorites
 // @desc    Get favorite notes
@@ -47,9 +47,9 @@ router.get("/saved", protect, getSavedNotes);
 router.get("/:id", getNoteById);
 
 // @route   POST /api/notes
-// @desc    Create new note
-// @access  Private
-router.post("/", protect, createNote);
+// @desc    Create new note (also used when uploading files)
+// @access  Public (anyone can upload)
+router.post("/", createNote);
 
 // @route   PUT /api/notes/:id
 // @desc    Update note
