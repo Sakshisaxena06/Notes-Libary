@@ -8,6 +8,7 @@ function UploadNotes({ user, isAdmin }) {
   const [files, setFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -15,8 +16,17 @@ function UploadNotes({ user, isAdmin }) {
   const [loading, setLoading] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [showSubjectSelection, setShowSubjectSelection] = useState(false);
+  const [notification, setNotification] = useState(null);
   const fileInputRef = useRef(null);
   const editFileInputRef = useRef(null);
+
+  // Show notification with animation
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,6 +109,26 @@ function UploadNotes({ user, isAdmin }) {
     }
   };
 
+  // Handle drag and drop
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...droppedFiles]);
+    }
+  };
+
   // Upload file to backend and create a public note
   const handleUpload = async (file, subject) => {
     setLoading(true);
@@ -176,14 +206,19 @@ function UploadNotes({ user, isAdmin }) {
       return;
     }
 
-    const subject = selectedSubject || "General";
+    if (!selectedSubject) {
+      alert("Please select a subject first!");
+      return;
+    }
+
+    const subject = selectedSubject;
 
     for (const file of files) {
       await handleUpload(file, subject);
     }
 
     setFiles([]);
-    alert("All files uploaded successfully!");
+    showNotification("✅ File uploaded successfully!");
   };
 
   // Remove file from selection
@@ -209,6 +244,7 @@ function UploadNotes({ user, isAdmin }) {
 
       if (response.ok) {
         setUploadedFiles(uploadedFiles.filter((f) => f._id !== fileId));
+        showNotification("🗑️ File deleted successfully!");
       } else {
         const data = await response.json();
         alert(data.message || "Cannot delete this file");
@@ -242,6 +278,13 @@ function UploadNotes({ user, isAdmin }) {
 
   return (
     <div className="page-content">
+      {/* Notification Popup */}
+      {notification && (
+        <div className={`notification-popup ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
       {/* Preview Modal */}
       {previewFile && (
         <div className="preview-modal" onClick={closePreview}>
@@ -298,7 +341,7 @@ function UploadNotes({ user, isAdmin }) {
         everyone.
       </p>
 
-      {/* Subject Selection */}
+      {/* Subject Selection - Required before upload */}
       <div className="subject-selection">
         <label htmlFor="subject">Select Subject: </label>
         <select
@@ -316,21 +359,25 @@ function UploadNotes({ user, isAdmin }) {
         </select>
       </div>
 
-      {/* File Input Area */}
-      <div className="upload-area">
+      {/* Drag and Drop Area */}
+      <div
+        className={`upload-area ${isDragging ? "dragging" : ""}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+      >
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileSelect}
           multiple
           accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
-          id="file-upload"
           style={{ display: "none" }}
         />
-        <label htmlFor="file-upload" className="file-label">
-          📁 Choose Files
-        </label>
-        <p className="upload-subtitle">Supports PDF, DOC, DOCX, TXT, Images</p>
+        <div className="upload-icon">📁</div>
+        <p>Drag & drop files here or click to browse</p>
+        <p className="upload-hint">Supports PDF, DOC, DOCX, TXT, Images</p>
       </div>
 
       {/* Selected Files to Upload */}
@@ -357,44 +404,50 @@ function UploadNotes({ user, isAdmin }) {
           <button
             className="upload-btn"
             onClick={handleUploadAll}
-            disabled={loading}
+            disabled={loading || !selectedSubject}
           >
             {loading ? "Uploading..." : "Upload All Files"}
           </button>
         </div>
       )}
 
-      {/* Uploaded Files */}
+      {/* Uploaded Files with View, Fav, Delete options */}
       {uploadedFiles.length > 0 && (
         <div className="uploaded-files">
           <h3>Your Uploaded Files</h3>
           <div className="file-grid">
             {uploadedFiles.map((file) => (
-              <div
-                key={file._id}
-                className="file-card"
-                onClick={(e) => handleFileClick(file, e)}
-              >
-                <div className="file-card-icon">{getFileIcon(file)}</div>
-                <div className="file-card-name" title={file.name}>
-                  {file.name}
+              <div key={file._id} className="file-card">
+                {/* View Button */}
+                <div
+                  className="file-card-main"
+                  onClick={(e) => handleFileClick(file, e)}
+                >
+                  <div className="file-card-icon">{getFileIcon(file)}</div>
+                  <div className="file-card-name" title={file.name}>
+                    {file.name}
+                  </div>
                 </div>
+                {/* Action Buttons */}
                 <div className="file-card-actions">
                   <button
-                    className={`favorite-btn ${file.isFavorite ? "active" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFavorite(file._id);
-                    }}
+                    className="action-btn view-btn"
+                    onClick={(e) => handleFileClick(file, e)}
+                    title="View File"
+                  >
+                    👁️
+                  </button>
+                  <button
+                    className={`action-btn fav-btn ${file.isFavorite ? "active" : ""}`}
+                    onClick={() => handleFavorite(file._id)}
+                    title="Add to Favorites"
                   >
                     {file.isFavorite ? "⭐" : "☆"}
                   </button>
                   <button
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(file._id);
-                    }}
+                    className="action-btn delete-btn"
+                    onClick={() => handleDelete(file._id)}
+                    title="Delete File"
                   >
                     🗑️
                   </button>

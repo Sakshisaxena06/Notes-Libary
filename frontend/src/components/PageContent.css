@@ -105,6 +105,12 @@
 }
 
 .upload-area.dragging {
+  border-color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+  transform: scale(1.02);
+}
+
+.upload-area.dragging {
   border-color: #e94560;
   background: rgba(233, 69, 96, 0.1);
 }
@@ -1867,24 +1873,29 @@
 }
 
 .selected-files .upload-btn {
-  background: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
+  padding: 14px 28px;
+  border-radius: 10px;
   font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   width: 100%;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .selected-files .upload-btn:hover {
-  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .selected-files .upload-btn:disabled {
   background: #ccc;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 /* File Card Actions in UploadNotes */
@@ -1929,4 +1940,137 @@
 
 .uploaded-files .favorite-btn.active {
   color: #f59e0b;
+}
+
+/* Notification Popup */
+.notification-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+  z-index: 10000;
+  animation:
+    slideInRight 0.3s ease,
+    fadeOut 0.3s ease 2.7s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.notification-popup.success {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+}
+
+.notification-popup.error {
+  background: linear-gradient(135deg, #e94560 0%, #d63d56 100%);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* File Card Main Clickable Area */
+.uploaded-files .file-card-main {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+}
+
+.uploaded-files .file-card-main:hover .file-card-icon {
+  transform: scale(1.1);
+}
+
+.uploaded-files .file-card-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease;
+}
+
+.uploaded-files .file-card-name {
+  color: #333;
+  font-size: 12px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+}
+
+/* Action Buttons */
+.uploaded-files .file-card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid #eee;
+}
+
+.uploaded-files .action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.uploaded-files .view-btn {
+  background: #667eea;
+  color: white;
+}
+
+.uploaded-files .view-btn:hover {
+  background: #5568d3;
+  transform: scale(1.1);
+}
+
+.uploaded-files .fav-btn {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.uploaded-files .fav-btn:hover {
+  background: #ffe0b2;
+  color: #f59e0b;
+  transform: scale(1.1);
+}
+
+.uploaded-files .fav-btn.active {
+  background: #fff3e0;
+  color: #f59e0b;
+}
+
+.uploaded-files .delete-btn {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.uploaded-files .delete-btn:hover {
+  background: #ffebee;
+  color: #e94560;
+  transform: scale(1.1);
 }
