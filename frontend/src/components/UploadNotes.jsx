@@ -24,14 +24,14 @@ function UploadNotes({ user, isAdmin }) {
       const promises = [];
 
       promises.push(
-        fetchWithAuth(`${BACKEND_URL}/api/subjects`).then((res) => res.json())
+        fetchWithAuth(`${BACKEND_URL}/api/subjects`).then((res) => res.json()),
       );
 
       if (user?._id) {
         promises.push(
           fetchWithAuth(`${BACKEND_URL}/api/notes/user/${user._id}`).then(
-            (res) => res.json()
-          )
+            (res) => res.json(),
+          ),
         );
       }
 
@@ -59,21 +59,18 @@ function UploadNotes({ user, isAdmin }) {
 
   const handleFileClick = (file, e) => {
     e.stopPropagation();
-    let fileURL, fileName, fileType;
+    let fileURL;
 
     if (file.fileUrl) {
       fileURL = file.fileUrl.startsWith("http")
         ? file.fileUrl
         : `${BACKEND_URL}${file.fileUrl}`;
-      fileName = file.name;
-      fileType = file.type;
     } else {
       fileURL = URL.createObjectURL(file);
-      fileName = file.name;
-      fileType = file.type;
     }
 
-    setPreviewFile({ url: fileURL, name: fileName, type: fileType });
+    // Open file in new tab instead of showing in modal
+    window.open(fileURL, "_blank");
   };
 
   const closePreview = () => {
@@ -93,7 +90,6 @@ function UploadNotes({ user, isAdmin }) {
 
   return (
     <div className="page-content">
-
       {/* Preview Modal */}
       {previewFile && (
         <div className="preview-modal" onClick={closePreview}>
@@ -147,7 +143,9 @@ function UploadNotes({ user, isAdmin }) {
 
       {/* Keep your remaining UI same */}
       <h1>Upload Notes</h1>
-      <p>Upload your notes from your computer or any device to share or backup.</p>
+      <p>
+        Upload your notes from your computer or any device to share or backup.
+      </p>
 
       {/* (rest of your code unchanged...) */}
     </div>
