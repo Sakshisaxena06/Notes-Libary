@@ -12,48 +12,45 @@ function UploadNotes({ user, isAdmin }) {
   const [showPopup, setShowPopup] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
-  const [editingType, setEditingType] = useState(null);
+  const [editingType, setEditingType] = useState(null); // 'selected' or 'uploaded'
   const [loading, setLoading] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState(""); // Empty by default to force selection
   const [showSubjectSelection, setShowSubjectSelection] = useState(false);
-  const [notification, setNotification] = useState(null);
   const fileInputRef = useRef(null);
   const editFileInputRef = useRef(null);
 
-  // Show notification with animation
-  const showNotification = (message, type = "success") => {
-    setNotification({ message, type });
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
+  // Load uploaded files from backend on mount
+  useEffect(() => {
+    if (user?._id) {
+      fetchUserNotes();
+    }
+    fetchSubjects();
+  }, [user]);
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await fetchWithAuth(`${BACKEND_URL}/api/subjects`);
+      if (response.ok) {
+        const data = await response.json();
+        setSubjects(data);
+      }
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+    }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const promises = [];
-
-      promises.push(
-        fetchWithAuth(`${BACKEND_URL}/api/subjects`).then((res) => res.json()),
+  const fetchUserNotes = async () => {
+    try {
+      const response = await fetchWithAuth(
+        `http://localhost:5000/api/notes/user/${user._id}`,
       );
-
-      if (user?._id) {
-        promises.push(
-          fetchWithAuth(`${BACKEND_URL}/api/notes/user/${user._id}`).then(
-            (res) => res.json(),
-          ),
-        );
-      }
-
-      const results = await Promise.all(promises);
-
-      setSubjects(results[0] || []);
-
-      if (user?._id && results[1]) {
-        const filesWithData = (results[1] || [])
+      if (response.ok) {
+        const notes = await response.json();
+        const filesWithData = notes
           .filter((note) => note.fileUrl)
           .map((note) => ({
             name: note.fileName,
-            size: 0,
+            size: 0, // Size not stored, will show as 0
             type: note.fileType,
             fileUrl: note.fileUrl,
             _id: note._id,
@@ -61,29 +58,130 @@ function UploadNotes({ user, isAdmin }) {
           }));
         setUploadedFiles(filesWithData);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching user notes:", error);
+    }
+  };
 
-    fetchData().catch(console.error);
-  }, [user]);
+  const handleFileSelect = (event) => {
+    const selectedFiles = Array.from(event.target.files);
+    if (selectedFiles.length > 0) {
+      setSelectedSubject(""); // Reset subject to force selection
+      setShowSubjectSelection(true); // Show subject selection
+    }
+    setFiles((prev) => [...prev, ...selectedFiles]);
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      setSelectedSubject(""); // Reset subject to force selection
+      setShowSubjectSelection(true); // Show subject selection
+    }
+    setFiles((prev) => [...prev, ...droppedFiles]);
+  };
+
+  const removeFile = (index, e) => {
+    e.stopPropagation();
+    const newFiles = files.filter((_, i) => i !== index);
+    setFiles(newFiles);
+    if (newFiles.length === 0) {
+      setShowSubjectSelection(false);
+      setSelectedSubject("");
+    }
+  };
+
+  const removeUploadedFile = async (index, e) => {
+    e.stopPropagation();
+    const fileToDelete = uploadedFiles[index];
+
+    // If file has an ID, delete it from backend
+    if (fileToDelete?._id) {
+      try {
+        // Pass userId and isAdmin for authorization
+        const params = new URLSearchParams();
+        if (user?._id) params.append("userId", user._id);
+        if (isAdmin) params.append("isAdmin", "true");
+
+        const response = await fetchWithAuth(
+          `http://localhost:5000/api/notes/${fileToDelete._id}?${params.toString()}`,
+          {
+            method: "DELETE",
+          },
+        );
+
+        if (!response.ok) {
+          const data = await response.json();
+          alert(data.message || "Cannot delete this note");
+          return;
+        }
+      } catch (error) {
+        console.error("Error deleting note:", error);
+      }
+    }
+
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleFavorite = async (index, e) => {
+    e.stopPropagation();
+    const file = uploadedFiles[index];
+    if (file?._id) {
+      try {
+        // Pass userId to verify ownership
+        const url = user?._id
+          ? `http://localhost:5000/api/notes/${file._id}/favorite?userId=${user._id}`
+          : `http://localhost:5000/api/notes/${file._id}/favorite`;
+
+        const response = await fetchWithAuth(url, {
+          method: "PUT",
+        });
+        const updatedNote = await response.json();
+        setUploadedFiles((prev) =>
+          prev.map((f, i) =>
+            i === index ? { ...f, isFavorite: updatedNote.isFavorite } : f,
+          ),
+        );
+      } catch (error) {
+        console.error("Error toggling favorite:", error);
+      }
+    }
+  };
+
+  const handleBrowseClick = (e) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
 
   const handleFileClick = (file, e) => {
     e.stopPropagation();
     let fileURL, fileName, fileType;
 
     if (file.fileUrl) {
-      fileURL = file.fileUrl.startsWith("http")
-        ? file.fileUrl
-        : `${BACKEND_URL}${file.fileUrl}`;
+      // It's an uploaded file from the backend
+      fileURL = `${BACKEND_URL}${file.fileUrl}`;
       fileName = file.name;
       fileType = file.type;
     } else {
+      // It's a local file selected by the user
       fileURL = URL.createObjectURL(file);
       fileName = file.name;
       fileType = file.type;
     }
 
-    // Open in new tab
-    window.open(fileURL, "_blank", "noopener,noreferrer");
+    setPreviewFile({ url: fileURL, name: fileName, type: fileType });
   };
 
   const closePreview = () => {
@@ -91,6 +189,137 @@ function UploadNotes({ user, isAdmin }) {
       URL.revokeObjectURL(previewFile.url);
     }
     setPreviewFile(null);
+  };
+
+  // Handle edit button click - allow user to replace the file
+  const handleEditClick = (index, type, e) => {
+    e.stopPropagation();
+    setEditingIndex(index);
+    setEditingType(type);
+    // Trigger hidden file input
+    setTimeout(() => {
+      editFileInputRef.current?.click();
+    }, 100);
+  };
+
+  // Handle file replacement
+  const handleFileReplace = (event) => {
+    const selectedFiles = Array.from(event.target.files);
+    if (selectedFiles.length > 0) {
+      const newFile = selectedFiles[0];
+      if (editingType === "selected") {
+        setFiles((prev) => {
+          const newFiles = [...prev];
+          newFiles[editingIndex] = newFile;
+          return newFiles;
+        });
+      } else if (editingType === "uploaded") {
+        setUploadedFiles((prev) => {
+          const newFiles = [...prev];
+          newFiles[editingIndex] = newFile;
+          return newFiles;
+        });
+      }
+    }
+    setEditingIndex(null);
+    setEditingType(null);
+  };
+
+  const handleUpload = async (e) => {
+    e?.stopPropagation();
+    if (files.length === 0) {
+      alert("Please select files to upload");
+      return;
+    }
+
+    if (!selectedSubject) {
+      alert("Please select a subject");
+      return;
+    }
+
+    if (!user?._id) {
+      alert("Please log in to upload files");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      for (const file of files) {
+        // Upload file to backend
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadResponse = await fetchWithAuth(
+          "http://localhost:5000/api/notes/upload",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload file");
+        }
+
+        const fileData = await uploadResponse.json();
+
+        // Create note in database
+        const noteResponse = await fetchWithAuth(
+          "http://localhost:5000/api/notes",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user: user._id,
+              title: file.name,
+              content: `Uploaded file: ${file.name}`,
+              subject: selectedSubject,
+              fileUrl: fileData.fileUrl,
+              fileName: fileData.fileName,
+              fileType: fileData.fileType,
+            }),
+          },
+        );
+
+        if (!noteResponse.ok) {
+          throw new Error("Failed to save note");
+        }
+
+        const note = await noteResponse.json();
+
+        // Add to uploaded files list
+        setUploadedFiles((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            fileUrl: fileData.fileUrl,
+            _id: note._id,
+          },
+        ]);
+      }
+
+      // Clear selected files
+      setFiles([]);
+      setSelectedSubject("");
+      setShowSubjectSelection(false);
+
+      // Show success popup
+      setShowPopup(true);
+      // Hide popup after 3 seconds
+      setTimeout(() => {
+        setShowPopup(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Failed to upload file. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getFileIcon = (file) => {
@@ -101,187 +330,23 @@ function UploadNotes({ user, isAdmin }) {
     return "📄";
   };
 
-  // Handle file selection
-  const handleFileSelect = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    if (selectedFiles.length > 0) {
-      setFiles((prev) => [...prev, ...selectedFiles]);
-    }
-  };
-
-  // Handle drag and drop
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      setFiles((prev) => [...prev, ...droppedFiles]);
-    }
-  };
-
-  // Upload file to backend and create a public note
-  const handleUpload = async (file, subject) => {
-    setLoading(true);
-    try {
-      // Step 1: Upload file to Cloudinary
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadResponse = await fetchWithAuth(
-        `${BACKEND_URL}/api/notes/upload`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload file");
-      }
-
-      const uploadData = await uploadResponse.json();
-
-      // Step 2: Create a note with the file info (will be visible to all)
-      const noteData = {
-        title: file.name,
-        content: `Uploaded file: ${file.name}`,
-        subject: subject || "General",
-        fileUrl: uploadData.fileUrl,
-        fileName: uploadData.fileName,
-        fileType: uploadData.fileType,
-        cloudinaryId: uploadData.cloudinaryId,
-      };
-
-      const noteResponse = await fetchWithAuth(`${BACKEND_URL}/api/notes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(noteData),
-      });
-
-      if (!noteResponse.ok) {
-        throw new Error("Failed to create note");
-      }
-
-      const note = await noteResponse.json();
-
-      // Add to uploaded files
-      setUploadedFiles((prev) => [
-        ...prev,
-        {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          fileUrl: uploadData.fileUrl,
-          _id: note._id,
-          isFavorite: false,
-        },
-      ]);
-
-      return true;
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert(`Failed to upload ${file.name}: ${error.message}`);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle upload all files
-  const handleUploadAll = async () => {
-    if (files.length === 0) {
-      alert("Please select files to upload");
-      return;
-    }
-
-    if (!selectedSubject) {
-      alert("Please select a subject first!");
-      return;
-    }
-
-    const subject = selectedSubject;
-
-    for (const file of files) {
-      await handleUpload(file, subject);
-    }
-
-    setFiles([]);
-    showNotification("✅ File uploaded successfully!");
-  };
-
-  // Remove file from selection
-  const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index));
-  };
-
-  // Delete uploaded file
-  const handleDelete = async (fileId) => {
-    if (!confirm("Are you sure you want to delete this file?")) return;
-
-    try {
-      const params = new URLSearchParams();
-      if (user?._id) params.append("userId", user._id);
-      if (isAdmin) params.append("isAdmin", "true");
-
-      const response = await fetchWithAuth(
-        `${BACKEND_URL}/api/notes/${fileId}?${params.toString()}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (response.ok) {
-        setUploadedFiles(uploadedFiles.filter((f) => f._id !== fileId));
-        showNotification("🗑️ File deleted successfully!");
-      } else {
-        const data = await response.json();
-        alert(data.message || "Cannot delete this file");
-      }
-    } catch (error) {
-      console.error("Error deleting file:", error);
-    }
-  };
-
-  // Handle favorite
-  const handleFavorite = async (fileId) => {
-    try {
-      const url = user?._id
-        ? `${BACKEND_URL}/api/notes/${fileId}/favorite?userId=${user._id}`
-        : `${BACKEND_URL}/api/notes/${fileId}/favorite`;
-
-      const response = await fetchWithAuth(url, {
-        method: "PUT",
-      });
-      const updatedNote = await response.json();
-
-      setUploadedFiles(
-        uploadedFiles.map((f) =>
-          f._id === fileId ? { ...f, isFavorite: updatedNote.isFavorite } : f,
-        ),
-      );
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-    }
-  };
-
   return (
     <div className="page-content">
-      {/* Notification Popup */}
-      {notification && (
-        <div className={`notification-popup ${notification.type}`}>
-          {notification.message}
+      {/* Hidden input for file replacement */}
+      <input
+        type="file"
+        ref={editFileInputRef}
+        className="file-input"
+        style={{ display: "none" }}
+        onChange={handleFileReplace}
+        accept=".pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg"
+      />
+
+      {/* Success Popup */}
+      {showPopup && (
+        <div className="success-popup">
+          <span className="popup-icon">✓</span>
+          <span className="popup-text">Your file uploaded successfully!</span>
         </div>
       )}
 
@@ -292,32 +357,11 @@ function UploadNotes({ user, isAdmin }) {
             <button className="preview-close" onClick={closePreview}>
               ✕
             </button>
-
             <h3>{previewFile.name}</h3>
-
             {previewFile.type.startsWith("image/") ? (
               <img src={previewFile.url} alt={previewFile.name} />
             ) : previewFile.type === "application/pdf" ? (
-              <>
-                <iframe
-                  src={`https://docs.google.com/gview?url=${previewFile.url}&embedded=true`}
-                  width="100%"
-                  height="500px"
-                  title={previewFile.name}
-                />
-                <a
-                  href={previewFile.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "block",
-                    marginTop: "10px",
-                    textAlign: "center",
-                  }}
-                >
-                  🔗 Open in new tab
-                </a>
-              </>
+              <iframe src={previewFile.url} title={previewFile.name} />
             ) : (
               <div className="preview-not-available">
                 <span className="file-icon">{getFileIcon(previewFile)}</span>
@@ -337,119 +381,231 @@ function UploadNotes({ user, isAdmin }) {
 
       <h1>Upload Notes</h1>
       <p>
-        Upload your notes from your computer or any device to share with
-        everyone.
+        Upload your notes from your computer or any device to share or backup.
       </p>
 
-      {/* Subject Selection - Required before upload */}
-      <div className="subject-selection">
-        <label htmlFor="subject">Select Subject: </label>
-        <select
-          id="subject"
-          value={selectedSubject}
-          onChange={(e) => setSelectedSubject(e.target.value)}
-          className="subject-select"
-        >
-          <option value="">Choose a subject...</option>
-          {subjects.map((subject) => (
-            <option key={subject._id} value={subject.name}>
-              {subject.icon} {subject.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Drag and Drop Area */}
       <div
         className={`upload-area ${isDragging ? "dragging" : ""}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
       >
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-          multiple
-          accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
-          style={{ display: "none" }}
-        />
-        <div className="upload-icon">📁</div>
-        <p>Drag & drop files here or click to browse</p>
-        <p className="upload-hint">Supports PDF, DOC, DOCX, TXT, Images</p>
+        <div className="upload-box" onClick={handleBrowseClick}>
+          <span className="upload-icon">📁</span>
+          <p className="upload-text">Drag and drop files here</p>
+          <p className="upload-subtitle">or click to browse from your device</p>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="file-input"
+            multiple
+            onChange={handleFileSelect}
+            accept=".pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg"
+          />
+        </div>
       </div>
 
-      {/* Selected Files to Upload */}
+      <div className="supported-formats">
+        <h3>Supported Formats:</h3>
+        <p>PDF, Word Documents (DOC/DOCX), Text Files, Images (PNG/JPG)</p>
+      </div>
+
+      {/* Subject Selection - Show when files are added */}
+      {(files.length > 0 || showSubjectSelection) && (
+        <div className="subject-selection">
+          <label>Select Subject: </label>
+          <select
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
+            className="subject-select"
+            required
+          >
+            <option value="">-- Select Subject --</option>
+            {subjects.map((subject) => (
+              <option key={subject._id} value={subject.name}>
+                {subject.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {files.length > 0 && (
-        <div className="selected-files">
-          <h3>Files to Upload ({files.length})</h3>
-          <div className="file-list">
+        <div className="uploaded-files">
+          <h3>Selected Files ({files.length})</h3>
+          <div className="file-grid">
             {files.map((file, index) => (
-              <div key={index} className="file-item">
-                <span className="file-icon">{getFileIcon(file)}</span>
-                <span className="file-name">{file.name}</span>
-                <span className="file-size">
-                  ({(file.size / 1024).toFixed(1)} KB)
-                </span>
-                <button
-                  className="remove-file-btn"
-                  onClick={() => removeFile(index)}
+              <div key={index} className="file-card">
+                <div
+                  className="file-main"
+                  onClick={(e) => handleFileClick(file, e)}
                 >
-                  ✕
-                </button>
+                  <span className="file-icon">{getFileIcon(file)}</span>
+                  <div className="file-info">
+                    <span className="file-name" title={file.name}>
+                      {file.name}
+                    </span>
+                    <span className="file-size">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                </div>
+                <div className="file-actions">
+                  <button
+                    className="action-btn view"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFileClick(file, e);
+                    }}
+                    title="View"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                  <button
+                    className="action-btn edit"
+                    onClick={(e) => handleEditClick(index, "selected", e)}
+                    title="Replace/Edit"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    className="action-btn delete"
+                    onClick={(e) => removeFile(index, e)}
+                    title="Delete"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
           <button
             className="upload-btn"
-            onClick={handleUploadAll}
-            disabled={loading || !selectedSubject}
+            onClick={handleUpload}
+            disabled={loading}
           >
-            {loading ? "Uploading..." : "Upload All Files"}
+            {loading
+              ? "Uploading..."
+              : `Upload ${files.length} File${files.length > 1 ? "s" : ""}`}
           </button>
         </div>
       )}
 
-      {/* Uploaded Files with View, Fav, Delete options */}
       {uploadedFiles.length > 0 && (
         <div className="uploaded-files">
-          <h3>Your Uploaded Files</h3>
+          <h3>Uploaded Files ({uploadedFiles.length})</h3>
           <div className="file-grid">
-            {uploadedFiles.map((file) => (
-              <div key={file._id} className="file-card">
-                {/* View Button */}
+            {uploadedFiles.map((file, index) => (
+              <div key={index} className="file-card uploaded">
                 <div
-                  className="file-card-main"
+                  className="file-main"
                   onClick={(e) => handleFileClick(file, e)}
                 >
-                  <div className="file-card-icon">{getFileIcon(file)}</div>
-                  <div className="file-card-name" title={file.name}>
-                    {file.name}
+                  <span className="file-icon">{getFileIcon(file)}</span>
+                  <div className="file-info">
+                    <span className="file-name" title={file.name}>
+                      {file.name}
+                    </span>
+                    <span className="file-size">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </span>
                   </div>
                 </div>
-                {/* Action Buttons */}
-                <div className="file-card-actions">
+                <div className="file-actions">
                   <button
-                    className="action-btn view-btn"
-                    onClick={(e) => handleFileClick(file, e)}
-                    title="View File"
-                  >
-                    👁️
-                  </button>
-                  <button
-                    className={`action-btn fav-btn ${file.isFavorite ? "active" : ""}`}
-                    onClick={() => handleFavorite(file._id)}
-                    title="Add to Favorites"
+                    className={`action-btn favorite ${file.isFavorite ? "active" : ""}`}
+                    onClick={(e) => handleFavorite(index, e)}
+                    title={
+                      file.isFavorite
+                        ? "Remove from Favorites"
+                        : "Add to Favorites"
+                    }
                   >
                     {file.isFavorite ? "⭐" : "☆"}
                   </button>
                   <button
-                    className="action-btn delete-btn"
-                    onClick={() => handleDelete(file._id)}
-                    title="Delete File"
+                    className="action-btn view"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFileClick(file, e);
+                    }}
+                    title="View"
                   >
-                    🗑️
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                  <button
+                    className="action-btn edit"
+                    onClick={(e) => handleEditClick(index, "uploaded", e)}
+                    title="Replace/Edit"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    className="action-btn delete"
+                    onClick={(e) => removeUploadedFile(index, e)}
+                    title="Delete"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                   </button>
                 </div>
               </div>
