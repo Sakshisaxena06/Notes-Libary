@@ -22,6 +22,7 @@ const app = express();
 const corsOptions = {
   origin: [
     "https://notes-libary-jbp6.vercel.app", // your frontend (deployed)
+    "https://notes-libary.vercel.app", // your backend (deployed)
     "http://localhost:5173", // local frontend
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
