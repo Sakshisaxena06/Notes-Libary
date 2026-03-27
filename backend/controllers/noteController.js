@@ -157,13 +157,16 @@ export const updateNote = async (req, res) => {
 // @desc    Delete note
 export const deleteNote = async (req, res) => {
   try {
-    const { userId, isAdmin } = req.query;
     const note = await Note.findById(req.params.id);
 
     if (note) {
-      const isAdminBool = isAdmin === true || isAdmin === "true";
+      const isOwner =
+        req.user &&
+        note.user &&
+        note.user.toString() === req.user._id.toString();
+      const isAdmin = req.user && req.user.isAdmin;
 
-      if (isAdminBool || (userId && note.user.toString() === userId)) {
+      if (isAdmin || isOwner) {
         if (note.cloudinaryId) {
           try {
             await cloudinary.uploader.destroy(note.cloudinaryId);
