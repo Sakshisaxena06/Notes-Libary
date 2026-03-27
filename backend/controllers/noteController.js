@@ -54,9 +54,11 @@ export const createNote = async (req, res) => {
       fileName,
       fileType,
       cloudinaryId,
+      user: bodyUserId,
     } = req.body;
 
-    const userId = req.user ? req.user._id : undefined;
+    // Use user ID from request body if provided, otherwise from req.user (set by protect middleware)
+    const userId = bodyUserId || (req.user ? req.user._id : undefined);
 
     const note = new Note({
       user: userId || undefined, // Will be undefined instead of null if not provided

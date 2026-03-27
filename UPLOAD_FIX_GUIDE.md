@@ -38,6 +38,9 @@ The file upload is failing with a 500 Internal Server Error because Cloudinary e
 
 - Updated `deleteNote` function to check query parameters as fallback for authorization
 - Updated `toggleSaved` function to check query parameters as fallback for authorization
+- **CRITICAL FIX**: Updated `createNote` function to use user ID from request body if provided
+  - This was the root cause of 403 errors - notes were being created without user ID
+  - Now notes are properly associated with the user who uploaded them
 - This fixes 403 Forbidden errors when deleting or saving notes
 
 ### 7. Fixed `frontend/src/components/UploadNotes.jsx` (User ID Fallback)
@@ -119,7 +122,7 @@ You should see:
 ## Files Modified
 
 1. `backend/vercel.json` - Fixed CORS headers
-2. `backend/controllers/noteController.js` - Added credential checks, logging, and fixed authorization
+2. `backend/controllers/noteController.js` - Added credential checks, logging, and fixed authorization (CRITICAL: Fixed createNote to use user ID from request body)
 3. `backend/middleware/uploadMiddleware.js` - Added error handling middleware
 4. `backend/server.js` - Added test endpoint and error handling
 5. `frontend/src/utils/api.js` - Fixed Content-Type header for FormData uploads
