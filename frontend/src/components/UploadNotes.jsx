@@ -184,8 +184,8 @@ function UploadNotes({ user, isAdmin }) {
     let fileURL, fileName, fileType;
 
     if (file.fileUrl) {
-      // It's an uploaded file from the backend
-      fileURL = `${BACKEND_URL}${file.fileUrl}`;
+      // It's an uploaded file from the backend (Cloudinary URL is already absolute)
+      fileURL = file.fileUrl;
       fileName = file.name;
       fileType = file.type;
     } else {

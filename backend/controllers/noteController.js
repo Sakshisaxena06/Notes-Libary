@@ -229,9 +229,9 @@ export const deleteNote = async (req, res) => {
         cloudinaryId: note.cloudinaryId,
       });
 
-      // Check authorization from req.user (set by protect middleware) or query parameters
-      const userId = req.user?._id?.toString() || req.query.userId;
-      const isAdmin = req.user?.isAdmin || req.query.isAdmin === "true";
+      // Check authorization from req.user (set by protect middleware) only
+      const userId = req.user?._id?.toString();
+      const isAdmin = req.user?.isAdmin;
       const isOwner = userId && note.user && note.user.toString() === userId;
 
       console.log("Authorization check:", {
@@ -240,9 +240,6 @@ export const deleteNote = async (req, res) => {
         userId,
         noteUser: note.user?.toString(),
         reqUser: req.user?._id?.toString(),
-        queryUserId: req.query.userId,
-        queryIsAdmin: req.query.isAdmin,
-        fullQuery: req.query,
       });
 
       if (isAdmin || isOwner) {
@@ -357,9 +354,9 @@ export const toggleSaved = async (req, res) => {
     const note = await Note.findById(req.params.id);
 
     if (note) {
-      // Check authorization from req.user (set by protect middleware) or query parameters
-      const userId = req.user?._id?.toString() || req.query.userId;
-      const isAdmin = req.user?.isAdmin || req.query.isAdmin === "true";
+      // Check authorization from req.user (set by protect middleware) only
+      const userId = req.user?._id?.toString();
+      const isAdmin = req.user?.isAdmin;
       const isOwner = userId && note.user && note.user.toString() === userId;
 
       console.log("Toggle saved authorization check:", {
