@@ -157,35 +157,70 @@ export const updateNote = async (req, res) => {
 // @desc    Delete note
 export const deleteNote = async (req, res) => {
   try {
+    console.log("Delete note request:", {
+      noteId: req.params.id,
+      userId: req.user?._id,
+      isAdmin: req.user?.isAdmin,
+    });
+
+    // Validate note ID
+    if (!req.params.id || !req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log("Invalid note ID format:", req.params.id);
+      return res.status(400).json({ message: "Invalid note ID format" });
+    }
+
     const note = await Note.findById(req.params.id);
 
     if (note) {
+      console.log("Note found:", {
+        noteId: note._id,
+        noteUser: note.user,
+        cloudinaryId: note.cloudinaryId,
+      });
+
       const isOwner =
         req.user &&
         note.user &&
         note.user.toString() === req.user._id.toString();
       const isAdmin = req.user && req.user.isAdmin;
 
+      console.log("Authorization check:", { isOwner, isAdmin });
+
       if (isAdmin || isOwner) {
         if (note.cloudinaryId) {
           try {
+            console.log("Deleting from Cloudinary:", note.cloudinaryId);
             await cloudinary.uploader.destroy(note.cloudinaryId);
+            console.log("Cloudinary delete successful");
           } catch (err) {
             console.error("Cloudinary delete error:", err);
+            // Continue with note deletion even if Cloudinary delete fails
           }
         }
 
-        await note.deleteOne();
-        return res.json({ message: "Note removed" });
+        console.log("Deleting note from database");
+        try {
+          await note.deleteOne();
+          console.log("Note deleted successfully");
+          return res.json({ message: "Note removed" });
+        } catch (dbError) {
+          console.error("Database delete error:", dbError);
+          return res
+            .status(500)
+            .json({ message: "Failed to delete note from database" });
+        }
       }
 
+      console.log("Authorization failed");
       return res
         .status(403)
         .json({ message: "Not authorized to delete this note" });
     } else {
+      console.log("Note not found");
       res.status(404).json({ message: "Note not found" });
     }
   } catch (error) {
+    console.error("Delete note error:", error);
     res.status(500).json({ message: error.message });
   }
 };
