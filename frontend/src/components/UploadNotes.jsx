@@ -107,13 +107,27 @@ function UploadNotes({ user, isAdmin }) {
     e.stopPropagation();
     const fileToDelete = uploadedFiles[index];
 
+    console.log("Delete request:", {
+      fileToDelete,
+      user,
+      isAdmin,
+      userId: user?._id,
+      hasUserId: !!user?._id,
+    });
+
     // If file has an ID, delete it from backend
     if (fileToDelete?._id) {
       try {
         // Pass userId and isAdmin for authorization
         const params = new URLSearchParams();
-        if (user?._id) params.append("userId", user._id);
+        const userId = user?._id || user?.id;
+        if (userId) params.append("userId", userId);
         if (isAdmin) params.append("isAdmin", "true");
+
+        console.log(
+          "Delete URL:",
+          `${BACKEND_URL}/api/notes/${fileToDelete._id}?${params.toString()}`,
+        );
 
         const response = await fetchWithAuth(
           `${BACKEND_URL}/api/notes/${fileToDelete._id}?${params.toString()}`,

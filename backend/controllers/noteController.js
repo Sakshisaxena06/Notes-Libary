@@ -208,6 +208,8 @@ export const deleteNote = async (req, res) => {
       isAdmin: req.user?.isAdmin,
       queryUserId: req.query.userId,
       queryIsAdmin: req.query.isAdmin,
+      fullQuery: req.query,
+      fullUser: req.user,
     });
 
     // Validate note ID
@@ -230,7 +232,16 @@ export const deleteNote = async (req, res) => {
       const isAdmin = req.user?.isAdmin || req.query.isAdmin === "true";
       const isOwner = userId && note.user && note.user.toString() === userId;
 
-      console.log("Authorization check:", { isOwner, isAdmin, userId });
+      console.log("Authorization check:", {
+        isOwner,
+        isAdmin,
+        userId,
+        noteUser: note.user?.toString(),
+        reqUser: req.user?._id?.toString(),
+        queryUserId: req.query.userId,
+        queryIsAdmin: req.query.isAdmin,
+        fullQuery: req.query,
+      });
 
       if (isAdmin || isOwner) {
         if (note.cloudinaryId) {

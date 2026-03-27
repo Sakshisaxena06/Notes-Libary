@@ -40,6 +40,12 @@ The file upload is failing with a 500 Internal Server Error because Cloudinary e
 - Updated `toggleSaved` function to check query parameters as fallback for authorization
 - This fixes 403 Forbidden errors when deleting or saving notes
 
+### 7. Fixed `frontend/src/components/UploadNotes.jsx` (User ID Fallback)
+
+- Added fallback to check for both `user._id` and `user.id` when deleting files
+- Added detailed logging for debugging
+- This fixes 403 Forbidden errors when user object has different property name
+
 ## Steps to Fix Upload on Vercel
 
 ### Step 1: Set Cloudinary Environment Variables in Vercel
@@ -117,6 +123,7 @@ You should see:
 3. `backend/middleware/uploadMiddleware.js` - Added error handling middleware
 4. `backend/server.js` - Added test endpoint and error handling
 5. `frontend/src/utils/api.js` - Fixed Content-Type header for FormData uploads
+6. `frontend/src/components/UploadNotes.jsx` - Added user ID fallback and logging
 
 ## Testing Locally
 
