@@ -183,23 +183,10 @@ export const deleteNote = async (req, res) => {
         note.user &&
         note.user.toString() === req.user._id.toString();
       const isAdmin = req.user && req.user.isAdmin;
-      const isPublicNote = !note.user; // Notes without a user are considered public
-      // Also check userId from query parameter (sent by frontend)
-      const userIdFromQuery = req.query.userId;
-      const isOwnerFromQuery =
-        userIdFromQuery &&
-        note.user &&
-        note.user.toString() === userIdFromQuery;
 
-      console.log("Authorization check:", {
-        isOwner,
-        isAdmin,
-        isPublicNote,
-        isOwnerFromQuery,
-        userIdFromQuery,
-      });
+      console.log("Authorization check:", { isOwner, isAdmin });
 
-      if (isAdmin || isOwner || isPublicNote || isOwnerFromQuery) {
+      if (isAdmin || isOwner) {
         if (note.cloudinaryId) {
           try {
             console.log("Deleting from Cloudinary:", note.cloudinaryId);
