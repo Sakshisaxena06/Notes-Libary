@@ -82,7 +82,24 @@ export const createNote = async (req, res) => {
 // ✅ ✅ FIXED UPLOAD FUNCTION (MAIN CHANGE)
 export const uploadFile = async (req, res) => {
   try {
+    console.log("Upload request received:", {
+      hasFile: !!req.file,
+      file: req.file
+        ? {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+          }
+        : null,
+      body: req.body,
+      headers: {
+        "content-type": req.headers["content-type"],
+        "content-length": req.headers["content-length"],
+      },
+    });
+
     if (!req.file) {
+      console.error("No file in request");
       return res.status(400).json({ message: "No file uploaded" });
     }
 
@@ -97,12 +114,10 @@ export const uploadFile = async (req, res) => {
         api_key: process.env.CLOUDINARY_API_KEY ? "set" : "missing",
         api_secret: process.env.CLOUDINARY_API_SECRET ? "set" : "missing",
       });
-      return res
-        .status(500)
-        .json({
-          message:
-            "File upload service not configured. Please contact administrator.",
-        });
+      return res.status(500).json({
+        message:
+          "File upload service not configured. Please contact administrator.",
+      });
     }
 
     console.log("Uploading file to Cloudinary:", {
@@ -191,6 +206,8 @@ export const deleteNote = async (req, res) => {
       noteId: req.params.id,
       userId: req.user?._id,
       isAdmin: req.user?.isAdmin,
+      queryUserId: req.query.userId,
+      queryIsAdmin: req.query.isAdmin,
     });
 
     // Validate note ID
@@ -208,13 +225,12 @@ export const deleteNote = async (req, res) => {
         cloudinaryId: note.cloudinaryId,
       });
 
-      const isOwner =
-        req.user &&
-        note.user &&
-        note.user.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.isAdmin;
+      // Check authorization from req.user (set by protect middleware) or query parameters
+      const userId = req.user?._id?.toString() || req.query.userId;
+      const isAdmin = req.user?.isAdmin || req.query.isAdmin === "true";
+      const isOwner = userId && note.user && note.user.toString() === userId;
 
-      console.log("Authorization check:", { isOwner, isAdmin });
+      console.log("Authorization check:", { isOwner, isAdmin, userId });
 
       if (isAdmin || isOwner) {
         if (note.cloudinaryId) {
@@ -328,6 +344,23 @@ export const toggleSaved = async (req, res) => {
     const note = await Note.findById(req.params.id);
 
     if (note) {
+      // Check authorization from req.user (set by protect middleware) or query parameters
+      const userId = req.user?._id?.toString() || req.query.userId;
+      const isAdmin = req.user?.isAdmin || req.query.isAdmin === "true";
+      const isOwner = userId && note.user && note.user.toString() === userId;
+
+      console.log("Toggle saved authorization check:", {
+        isOwner,
+        isAdmin,
+        userId,
+      });
+
+      if (!isAdmin && !isOwner) {
+        return res
+          .status(403)
+          .json({ message: "Not authorized to save this note" });
+      }
+
       note.isSaved = !note.isSaved;
       const updatedNote = await note.save();
       res.json(updatedNote);

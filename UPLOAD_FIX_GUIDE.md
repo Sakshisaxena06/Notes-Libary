@@ -28,6 +28,18 @@ The file upload is failing with a 500 Internal Server Error because Cloudinary e
 - Imported and added `handleUploadError` middleware
 - Added `/api/test-upload` endpoint to check Cloudinary configuration
 
+### 5. Fixed `frontend/src/utils/api.js`
+
+- Fixed `fetchWithAuth` to not set `Content-Type` header when sending FormData
+- Browser now sets Content-Type automatically with correct multipart boundary
+- This was causing 400 Bad Request errors on file uploads
+
+### 6. Fixed `backend/controllers/noteController.js` (Authorization)
+
+- Updated `deleteNote` function to check query parameters as fallback for authorization
+- Updated `toggleSaved` function to check query parameters as fallback for authorization
+- This fixes 403 Forbidden errors when deleting or saving notes
+
 ## Steps to Fix Upload on Vercel
 
 ### Step 1: Set Cloudinary Environment Variables in Vercel
@@ -90,12 +102,21 @@ You should see:
 
 **Solution**: The vercel.json has been updated. Make sure to redeploy after changes.
 
+### Issue 4: "No file uploaded" (400 error)
+
+**Solution**: This was caused by `fetchWithAuth` setting `Content-Type: application/json` by default. When sending FormData, the browser needs to set the Content-Type automatically with the multipart boundary. This has been fixed in `frontend/src/utils/api.js`. Make sure to redeploy your frontend after this fix.
+
+### Issue 5: "Not authorized to delete this note" (403 error)
+
+**Solution**: This was caused by the `deleteNote` and `toggleSaved` functions only checking `req.user` (set by protect middleware) for authorization. The frontend was passing `userId` and `isAdmin` as query parameters, but the controller wasn't checking them. This has been fixed in `backend/controllers/noteController.js`. Make sure to redeploy your backend after this fix.
+
 ## Files Modified
 
 1. `backend/vercel.json` - Fixed CORS headers
-2. `backend/controllers/noteController.js` - Added credential checks and logging
+2. `backend/controllers/noteController.js` - Added credential checks, logging, and fixed authorization
 3. `backend/middleware/uploadMiddleware.js` - Added error handling middleware
 4. `backend/server.js` - Added test endpoint and error handling
+5. `frontend/src/utils/api.js` - Fixed Content-Type header for FormData uploads
 
 ## Testing Locally
 
