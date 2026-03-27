@@ -67,6 +67,7 @@ router.put("/:id/save", toggleSaved);
 
 // @route   DELETE /api/notes/:id
 // @desc    Delete note
-router.delete("/:id", deleteNote);
+// @access  Private
+router.delete("/:id", protect, deleteNote);
 
 export default router;
