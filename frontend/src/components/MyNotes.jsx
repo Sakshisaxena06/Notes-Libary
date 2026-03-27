@@ -34,29 +34,24 @@ function MyNotes({ user, isAdmin }) {
   };
 
   const handleDelete = async (id) => {
-    try {
-      // Pass userId and isAdmin for authorization
-      const params = new URLSearchParams();
-      if (user?._id) params.append("userId", user._id);
-      if (isAdmin) params.append("isAdmin", "true");
-
-      const response = await fetchWithAuth(
-        `${BACKEND_URL}/api/notes/${id}?${params.toString()}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (response.ok) {
-        setNotes(notes.filter((note) => note._id !== id));
-      } else {
-        const data = await response.json();
-        alert(data.message || "Cannot delete this note");
+  try {
+    const response = await fetchWithAuth(
+      `${BACKEND_URL}/api/notes/${id}`,
+      {
+        method: "DELETE",
       }
-    } catch (error) {
-      console.error("Error deleting note:", error);
+    );
+
+    if (response.ok) {
+      setNotes(notes.filter((note) => note._id !== id));
+    } else {
+      const data = await response.json();
+      alert(data.message || "Cannot delete this note");
     }
-  };
+  } catch (error) {
+    console.error("Error deleting note:", error);
+  }
+};
 
   const handleFavorite = async (id) => {
     try {
