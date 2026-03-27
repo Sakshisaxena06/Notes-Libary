@@ -8,6 +8,7 @@ import noteRoutes from "./routes/noteRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import { initDefaultSubjects } from "./controllers/subjectController.js";
+import { handleUploadError } from "./middleware/uploadMiddleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,12 +44,32 @@ app.use("/api/notes", noteRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/subjects", subjectRoutes);
 
+// Upload error handling middleware
+app.use(handleUploadError);
+
 // Initialize default subjects
 initDefaultSubjects();
 
 // Test route
 app.get("/", (req, res) => {
   res.send("Notes API running");
+});
+
+// Test upload endpoint
+app.get("/api/test-upload", (req, res) => {
+  const cloudinaryConfigured =
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET;
+
+  res.json({
+    status: "ok",
+    cloudinaryConfigured: !!cloudinaryConfigured,
+    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "not set",
+    message: cloudinaryConfigured
+      ? "Upload service is ready"
+      : "Cloudinary credentials not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Vercel environment variables.",
+  });
 });
 
 // Error handler

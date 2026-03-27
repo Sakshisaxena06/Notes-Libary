@@ -86,6 +86,31 @@ export const uploadFile = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
+    // Check if Cloudinary credentials are configured
+    if (
+      !process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET
+    ) {
+      console.error("Cloudinary credentials not configured:", {
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? "set" : "missing",
+        api_key: process.env.CLOUDINARY_API_KEY ? "set" : "missing",
+        api_secret: process.env.CLOUDINARY_API_SECRET ? "set" : "missing",
+      });
+      return res
+        .status(500)
+        .json({
+          message:
+            "File upload service not configured. Please contact administrator.",
+        });
+    }
+
+    console.log("Uploading file to Cloudinary:", {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    });
+
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
@@ -94,8 +119,13 @@ export const uploadFile = async (req, res) => {
           type: "upload", // ✅ FIX → makes file PUBLIC
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error("Cloudinary upload error:", error);
+            reject(error);
+          } else {
+            console.log("Cloudinary upload success:", result.public_id);
+            resolve(result);
+          }
         },
       );
 
@@ -109,8 +139,8 @@ export const uploadFile = async (req, res) => {
       cloudinaryId: result.public_id,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
+    console.error("Upload file error:", error);
+    res.status(500).json({ message: error.message || "Failed to upload file" });
   }
 };
 
