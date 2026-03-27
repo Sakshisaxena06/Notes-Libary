@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchWithAuth } from "../utils/api";
 import "./PageContent.css";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 function Dashboard({ isAdmin, user }) {
   const [stats, setStats] = useState({
@@ -30,9 +30,7 @@ function Dashboard({ isAdmin, user }) {
   const fetchStats = async () => {
     try {
       // Fetch ALL notes for Total Notes
-      const allNotesResponse = await fetchWithAuth(
-        "http://localhost:5000/api/notes",
-      );
+      const allNotesResponse = await fetchWithAuth(`${BACKEND_URL}/api/notes`);
       const allNotesData = await allNotesResponse.json();
 
       // For user's favorites and uploads
@@ -42,7 +40,7 @@ function Dashboard({ isAdmin, user }) {
       if (user?._id) {
         // Get user's uploaded notes count
         const userNotesResponse = await fetchWithAuth(
-          `http://localhost:5000/api/notes/user/${user._id}`,
+          `${BACKEND_URL}/api/notes/user/${user._id}`,
         );
         if (userNotesResponse.ok) {
           const userNotesData = await userNotesResponse.json();
@@ -52,7 +50,7 @@ function Dashboard({ isAdmin, user }) {
 
         // Get user's favorites count using the favorites endpoint
         const favoritesResponse = await fetchWithAuth(
-          `http://localhost:5000/api/notes/favorites?userId=${user._id}`,
+          `${BACKEND_URL}/api/notes/favorites?userId=${user._id}`,
         );
         if (favoritesResponse.ok) {
           const favoritesData = await favoritesResponse.json();
@@ -63,9 +61,7 @@ function Dashboard({ isAdmin, user }) {
       // Get total users count for admin
       let totalUsersCount = 0;
       if (isAdmin) {
-        const usersResponse = await fetchWithAuth(
-          "http://localhost:5000/api/users",
-        );
+        const usersResponse = await fetchWithAuth(`${BACKEND_URL}/api/users`);
         if (usersResponse.ok) {
           const usersData = await usersResponse.json();
           totalUsersCount = usersData.length || 0;
