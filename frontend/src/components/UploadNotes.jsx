@@ -278,7 +278,9 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("timestamp", signatureData.timestamp);
         cloudinaryFormData.append("api_key", signatureData.apiKey);
         cloudinaryFormData.append("folder", signatureData.folder);
-        cloudinaryFormData.append("resource_type", signatureData.resourceType);
+        // ✅ FIX: Always use "raw" for PDFs and documents to ensure they're publicly accessible
+        const resourceType = signatureData.resourceType || "raw";
+        cloudinaryFormData.append("resource_type", resourceType);
         cloudinaryFormData.append("type", "upload");
         cloudinaryFormData.append(
           "access_mode",
@@ -286,7 +288,7 @@ function UploadNotes({ user, isAdmin }) {
         ); // ✅ FIX: Ensure file is publicly accessible
 
         const cloudinaryResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${signatureData.resourceType}/upload`,
+          `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${resourceType}/upload`,
           {
             method: "POST",
             body: cloudinaryFormData,

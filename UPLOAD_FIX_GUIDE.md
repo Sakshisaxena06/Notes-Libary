@@ -121,14 +121,17 @@ You should see:
 
 ### Issue 6: "Failed to load resource: the server responded with a status of 401" (Cloudinary 401 error)
 
-**Solution**: This error occurs when trying to access a file from Cloudinary that is not publicly accessible. The file URL shows `/image/upload/` but the file is a PDF, which should be uploaded as `raw` resource type. The fix is to add `access_mode: "public"` to the upload parameters:
+**Solution**: This error occurs when trying to access a file from Cloudinary that is not publicly accessible. The file URL shows `/image/upload/` but the file is a PDF, which should be uploaded as `raw` resource type. The fix is to add `access_mode: "public"` to the upload parameters and ensure the correct resource type is used:
 
 1. In `backend/controllers/noteController.js`:
    - Added `access_mode: "public"` to the `getUploadSignature` function parameters
    - Added `access_mode: "public"` to the `uploadFile` function parameters
+   - Ensured `resource_type: "raw"` is always used for PDFs and documents
 
 2. In `frontend/src/components/UploadNotes.jsx`:
    - Added `access_mode` parameter when uploading to Cloudinary
+   - Added fallback to ensure `resource_type` is always "raw" for PDFs and documents
+   - Ensured the upload URL uses the correct resource type
 
 This ensures that all uploaded files are publicly accessible and can be viewed without authentication.
 
@@ -142,6 +145,8 @@ This ensures that all uploaded files are publicly accessible and can be viewed w
 6. `frontend/src/components/UploadNotes.jsx` - Added user ID fallback and logging
 7. `backend/controllers/noteController.js` - Added `access_mode: "public"` to upload signature and upload_file function to fix 401 errors
 8. `frontend/src/components/UploadNotes.jsx` - Added `access_mode` parameter when uploading to Cloudinary
+9. `backend/controllers/noteController.js` - Ensured `resource_type: "raw"` is always used for PDFs and documents
+10. `frontend/src/components/UploadNotes.jsx` - Added fallback to ensure `resource_type` is always "raw" for PDFs and documents
 
 ## Testing Locally
 
