@@ -280,6 +280,10 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("folder", signatureData.folder);
         cloudinaryFormData.append("resource_type", signatureData.resourceType);
         cloudinaryFormData.append("type", "upload");
+        cloudinaryFormData.append(
+          "access_mode",
+          signatureData.accessMode || "public",
+        ); // ✅ FIX: Ensure file is publicly accessible
 
         const cloudinaryResponse = await fetch(
           `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${signatureData.resourceType}/upload`,

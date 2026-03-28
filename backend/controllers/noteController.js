@@ -58,6 +58,7 @@ export const getUploadSignature = async (req, res) => {
       resource_type: "raw",
       timestamp: timestamp,
       type: "upload",
+      access_mode: "public", // ✅ FIX: Ensure file is publicly accessible
     };
 
     const signature = cloudinary.utils.api_sign_request(
@@ -72,6 +73,7 @@ export const getUploadSignature = async (req, res) => {
       apiKey: process.env.CLOUDINARY_API_KEY,
       folder: "notes-app",
       resourceType: "raw",
+      accessMode: "public", // ✅ FIX: Include access_mode in response
     });
   } catch (error) {
     console.error("Error generating upload signature:", error);
@@ -209,6 +211,7 @@ export const uploadFile = async (req, res) => {
           folder: "notes-app",
           resource_type: "raw", // supports PDF, images, docs
           type: "upload", // ✅ FIX → makes file PUBLIC
+          access_mode: "public", // ✅ FIX: Ensure file is publicly accessible
         },
         (error, result) => {
           if (error) {

@@ -119,6 +119,19 @@ You should see:
 
 **Solution**: This was caused by the `deleteNote` and `toggleSaved` functions only checking `req.user` (set by protect middleware) for authorization. The frontend was passing `userId` and `isAdmin` as query parameters, but the controller wasn't checking them. This has been fixed in `backend/controllers/noteController.js`. Make sure to redeploy your backend after this fix.
 
+### Issue 6: "Failed to load resource: the server responded with a status of 401" (Cloudinary 401 error)
+
+**Solution**: This error occurs when trying to access a file from Cloudinary that is not publicly accessible. The file URL shows `/image/upload/` but the file is a PDF, which should be uploaded as `raw` resource type. The fix is to add `access_mode: "public"` to the upload parameters:
+
+1. In `backend/controllers/noteController.js`:
+   - Added `access_mode: "public"` to the `getUploadSignature` function parameters
+   - Added `access_mode: "public"` to the `uploadFile` function parameters
+
+2. In `frontend/src/components/UploadNotes.jsx`:
+   - Added `access_mode` parameter when uploading to Cloudinary
+
+This ensures that all uploaded files are publicly accessible and can be viewed without authentication.
+
 ## Files Modified
 
 1. `backend/vercel.json` - Fixed CORS headers
@@ -127,6 +140,8 @@ You should see:
 4. `backend/server.js` - Added test endpoint and error handling
 5. `frontend/src/utils/api.js` - Fixed Content-Type header for FormData uploads
 6. `frontend/src/components/UploadNotes.jsx` - Added user ID fallback and logging
+7. `backend/controllers/noteController.js` - Added `access_mode: "public"` to upload signature and upload_file function to fix 401 errors
+8. `frontend/src/components/UploadNotes.jsx` - Added `access_mode` parameter when uploading to Cloudinary
 
 ## Testing Locally
 
