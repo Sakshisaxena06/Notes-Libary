@@ -260,23 +260,43 @@ function UploadNotes({ user, isAdmin }) {
 
     try {
       for (const file of files) {
-        // Upload file to backend
-        const formData = new FormData();
-        formData.append("file", file);
+        // Get upload signature from backend
+        const signatureResponse = await fetchWithAuth(
+          `${BACKEND_URL}/api/notes/upload-signature`,
+        );
 
-        const uploadResponse = await fetchWithAuth(
-          `${BACKEND_URL}/api/notes/upload`,
+        if (!signatureResponse.ok) {
+          throw new Error("Failed to get upload signature");
+        }
+
+        const signatureData = await signatureResponse.json();
+
+        // Upload directly to Cloudinary
+        const cloudinaryFormData = new FormData();
+        cloudinaryFormData.append("file", file);
+        cloudinaryFormData.append("signature", signatureData.signature);
+        cloudinaryFormData.append("timestamp", signatureData.timestamp);
+        cloudinaryFormData.append("api_key", signatureData.apiKey);
+        cloudinaryFormData.append("folder", signatureData.folder);
+        cloudinaryFormData.append("resource_type", "auto");
+        cloudinaryFormData.append("type", "upload");
+
+        const cloudinaryResponse = await fetch(
+          `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/auto/upload`,
           {
             method: "POST",
-            body: formData,
+            body: cloudinaryFormData,
           },
         );
 
-        if (!uploadResponse.ok) {
-          throw new Error("Failed to upload file");
+        if (!cloudinaryResponse.ok) {
+          const errorData = await cloudinaryResponse.json();
+          throw new Error(
+            errorData.error?.message || "Failed to upload to Cloudinary",
+          );
         }
 
-        const fileData = await uploadResponse.json();
+        const cloudinaryData = await cloudinaryResponse.json();
 
         // Create note in database
         const noteResponse = await fetchWithAuth(`${BACKEND_URL}/api/notes`, {
@@ -289,9 +309,10 @@ function UploadNotes({ user, isAdmin }) {
             title: file.name,
             content: `Uploaded file: ${file.name}`,
             subject: selectedSubject,
-            fileUrl: fileData.fileUrl,
-            fileName: fileData.fileName,
-            fileType: fileData.fileType,
+            fileUrl: cloudinaryData.secure_url,
+            fileName: file.name,
+            fileType: file.type,
+            cloudinaryId: cloudinaryData.public_id,
           }),
         });
 
@@ -308,7 +329,7 @@ function UploadNotes({ user, isAdmin }) {
             name: file.name,
             size: file.size,
             type: file.type,
-            fileUrl: fileData.fileUrl,
+            fileUrl: cloudinaryData.secure_url,
             _id: note._id,
           },
         ]);

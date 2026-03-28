@@ -13,6 +13,7 @@ import {
   toggleFavorite,
   toggleSaved,
   uploadFile,
+  getUploadSignature,
 } from "../controllers/noteController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -25,6 +26,11 @@ router.get("/", getNotes);
 // @desc    Get notes by user
 // @access  Private
 router.get("/user/:userId", protect, getNotesByUser);
+
+// @route   GET /api/notes/upload-signature
+// @desc    Get Cloudinary upload signature for direct upload
+// @access  Public
+router.get("/upload-signature", getUploadSignature);
 
 // @route   POST /api/notes/upload
 // @desc    Upload file

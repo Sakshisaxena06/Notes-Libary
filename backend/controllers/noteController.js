@@ -4,6 +4,35 @@ import path from "path";
 import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 
+// @desc    Get Cloudinary upload signature for direct upload
+export const getUploadSignature = async (req, res) => {
+  try {
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const params = {
+      timestamp: timestamp,
+      folder: "notes-app",
+      resource_type: "auto",
+      type: "upload",
+    };
+
+    const signature = cloudinary.utils.api_sign_request(
+      params,
+      process.env.CLOUDINARY_API_SECRET,
+    );
+
+    res.json({
+      signature,
+      timestamp,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      folder: "notes-app",
+    });
+  } catch (error) {
+    console.error("Error generating upload signature:", error);
+    res.status(500).json({ message: "Failed to generate upload signature" });
+  }
+};
+
 // @desc    Get all notes
 export const getNotes = async (req, res) => {
   try {
