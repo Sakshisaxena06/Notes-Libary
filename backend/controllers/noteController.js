@@ -55,7 +55,7 @@ export const getUploadSignature = async (req, res) => {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const params = {
       folder: "notes-app",
-      resource_type: "raw", // ✅ FIX: Always use "raw" for PDFs and documents
+      // ✅ FIX: Don't include resource_type in signature params - it's in the URL path
       timestamp: timestamp,
       type: "upload",
       access_mode: "public", // ✅ FIX: Ensure file is publicly accessible
@@ -72,7 +72,7 @@ export const getUploadSignature = async (req, res) => {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,
       folder: "notes-app",
-      resourceType: "raw", // ✅ FIX: Always return "raw" for PDFs and documents
+      resourceType: "raw", // ✅ FIX: Always return "raw" for PDFs and documents (used in URL path)
       accessMode: "public", // ✅ FIX: Include access_mode in response
     });
   } catch (error) {

@@ -126,12 +126,13 @@ You should see:
 1. In `backend/controllers/noteController.js`:
    - Added `access_mode: "public"` to the `getUploadSignature` function parameters
    - Added `access_mode: "public"` to the `uploadFile` function parameters
-   - Ensured `resource_type: "raw"` is always used for PDFs and documents
+   - Ensured `resource_type: "raw"` is always used for PDFs and documents (in URL path only)
+   - **IMPORTANT**: Removed `resource_type` from signature parameters to fix "Invalid Signature" error
 
 2. In `frontend/src/components/UploadNotes.jsx`:
    - Added `access_mode` parameter when uploading to Cloudinary
-   - Added fallback to ensure `resource_type` is always "raw" for PDFs and documents
-   - Ensured the upload URL uses the correct resource type
+   - Ensured the upload URL uses the correct resource type (`/raw/upload/`)
+   - **IMPORTANT**: Removed `resource_type` from form data to fix "Invalid Signature" error
 
 This ensures that all uploaded files are publicly accessible and can be viewed without authentication.
 
@@ -145,8 +146,10 @@ This ensures that all uploaded files are publicly accessible and can be viewed w
 6. `frontend/src/components/UploadNotes.jsx` - Added user ID fallback and logging
 7. `backend/controllers/noteController.js` - Added `access_mode: "public"` to upload signature and upload_file function to fix 401 errors
 8. `frontend/src/components/UploadNotes.jsx` - Added `access_mode` parameter when uploading to Cloudinary
-9. `backend/controllers/noteController.js` - Ensured `resource_type: "raw"` is always used for PDFs and documents
-10. `frontend/src/components/UploadNotes.jsx` - Added fallback to ensure `resource_type` is always "raw" for PDFs and documents
+9. `backend/controllers/noteController.js` - Ensured `resource_type: "raw"` is always used for PDFs and documents (in URL path only)
+10. `frontend/src/components/UploadNotes.jsx` - Ensured the upload URL uses the correct resource type (`/raw/upload/`)
+11. `backend/controllers/noteController.js` - **IMPORTANT**: Removed `resource_type` from signature parameters to fix "Invalid Signature" error
+12. `frontend/src/components/UploadNotes.jsx` - **IMPORTANT**: Removed `resource_type` from form data to fix "Invalid Signature" error
 
 ## Testing Locally
 
