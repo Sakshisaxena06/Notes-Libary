@@ -16,64 +16,26 @@ function Dashboard({ isAdmin, user }) {
   // Get user name from props or localStorage
   const userName = user?.name || localStorage.getItem("userName") || "User";
 
-  // Fetch stats on mount and when gaining focus (returning to dashboard)
+  // Fetch stats on mount only
   useEffect(() => {
     fetchStats();
-
-    // Refresh stats when window gains focus (user returns to this page)
-    const handleFocus = () => fetchStats();
-    window.addEventListener("focus", handleFocus);
-
-    return () => window.removeEventListener("focus", handleFocus);
   }, [user]);
 
   const fetchStats = async () => {
     try {
-      // Fetch ALL notes for Total Notes
-      const allNotesResponse = await fetchWithAuth(`${BACKEND_URL}/api/notes`);
-      const allNotesData = await allNotesResponse.json();
+      // Use optimized single endpoint for all stats
+      const params = new URLSearchParams();
+      if (user?._id) params.append("userId", user._id);
+      if (isAdmin) params.append("isAdmin", "true");
 
-      // For user's favorites and uploads
-      let userFavoriteCount = 0;
-      let userUploadedCount = 0;
+      const statsResponse = await fetchWithAuth(
+        `${BACKEND_URL}/api/notes/stats?${params.toString()}`,
+      );
 
-      if (user?._id) {
-        // Get user's uploaded notes count
-        const userNotesResponse = await fetchWithAuth(
-          `${BACKEND_URL}/api/notes/user/${user._id}`,
-        );
-        if (userNotesResponse.ok) {
-          const userNotesData = await userNotesResponse.json();
-          userUploadedCount =
-            userNotesData.filter((n) => n.fileUrl).length || 0;
-        }
-
-        // Get user's favorites count using the favorites endpoint
-        const favoritesResponse = await fetchWithAuth(
-          `${BACKEND_URL}/api/notes/favorites?userId=${user._id}`,
-        );
-        if (favoritesResponse.ok) {
-          const favoritesData = await favoritesResponse.json();
-          userFavoriteCount = favoritesData.length || 0;
-        }
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
       }
-
-      // Get total users count for admin
-      let totalUsersCount = 0;
-      if (isAdmin) {
-        const usersResponse = await fetchWithAuth(`${BACKEND_URL}/api/users`);
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          totalUsersCount = usersData.length || 0;
-        }
-      }
-
-      setStats({
-        totalNotes: allNotesData.length || 0,
-        favoriteNotes: userFavoriteCount,
-        uploadedNotes: userUploadedCount,
-        totalUsers: totalUsersCount,
-      });
       setLoading(false);
     } catch (error) {
       console.error("Error fetching stats:", error);

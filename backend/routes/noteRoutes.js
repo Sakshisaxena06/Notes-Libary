@@ -14,6 +14,7 @@ import {
   toggleSaved,
   uploadFile,
   getUploadSignature,
+  getDashboardStats,
 } from "../controllers/noteController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -26,6 +27,11 @@ router.get("/", getNotes);
 // @desc    Get notes by user
 // @access  Private
 router.get("/user/:userId", protect, getNotesByUser);
+
+// @route   GET /api/notes/stats
+// @desc    Get dashboard statistics (optimized)
+// @access  Public
+router.get("/stats", getDashboardStats);
 
 // @route   GET /api/notes/upload-signature
 // @desc    Get Cloudinary upload signature for direct upload

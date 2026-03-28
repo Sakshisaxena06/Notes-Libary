@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { fetchWithAuth } from "../utils/api";
 import "./PageContent.css";
 
@@ -17,6 +17,17 @@ function AllNotes({ user, isAdmin }) {
   const [newSubjectIcon, setNewSubjectIcon] = useState("📄");
 
   useEffect(() => {
+    // Check cache first
+    const cachedNotes = sessionStorage.getItem("allNotes");
+    const cachedSubjects = sessionStorage.getItem("allSubjects");
+
+    if (cachedNotes && cachedSubjects) {
+      setNotes(JSON.parse(cachedNotes));
+      setSubjects(JSON.parse(cachedSubjects));
+      setLoading(false);
+      return;
+    }
+
     // Fetch notes and subjects in parallel for faster loading
     Promise.all([
       fetchWithAuth(`${BACKEND_URL}/api/notes`),
@@ -27,6 +38,9 @@ function AllNotes({ user, isAdmin }) {
           ([notesData, subjectsData]) => {
             setNotes(notesData);
             setSubjects(subjectsData);
+            // Cache the data
+            sessionStorage.setItem("allNotes", JSON.stringify(notesData));
+            sessionStorage.setItem("allSubjects", JSON.stringify(subjectsData));
             setLoading(false);
           },
         );
@@ -96,31 +110,33 @@ function AllNotes({ user, isAdmin }) {
       })
     : filteredNotes;
 
-  // Group notes by subject
-  const groupedNotes = subjects.reduce((acc, subject) => {
-    acc[subject.name] = notes.filter((note) => note.subject === subject.name);
-    return acc;
-  }, {});
+  // Group notes by subject (memoized for performance)
+  const groupedNotes = useMemo(() => {
+    return subjects.reduce((acc, subject) => {
+      acc[subject.name] = notes.filter((note) => note.subject === subject.name);
+      return acc;
+    }, {});
+  }, [subjects, notes]);
 
   const handleDelete = async (id) => {
-  try {
-    const response = await fetchWithAuth(
-      `${BACKEND_URL}/api/notes/${id}`,
-      {
+    try {
+      const response = await fetchWithAuth(`${BACKEND_URL}/api/notes/${id}`, {
         method: "DELETE",
-      }
-    );
+      });
 
-    if (response.ok) {
-      setNotes(notes.filter((note) => note._id !== id));
-    } else {
-      const data = await response.json();
-      alert(data.message || "Cannot delete this note");
+      if (response.ok) {
+        const updatedNotes = notes.filter((note) => note._id !== id);
+        setNotes(updatedNotes);
+        // Update cache
+        sessionStorage.setItem("allNotes", JSON.stringify(updatedNotes));
+      } else {
+        const data = await response.json();
+        alert(data.message || "Cannot delete this note");
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error);
     }
-  } catch (error) {
-    console.error("Error deleting note:", error);
-  }
-};
+  };
 
   const handleFavorite = async (id) => {
     try {
@@ -132,7 +148,12 @@ function AllNotes({ user, isAdmin }) {
         method: "PUT",
       });
       const updatedNote = await response.json();
-      setNotes(notes.map((note) => (note._id === id ? updatedNote : note)));
+      const updatedNotes = notes.map((note) =>
+        note._id === id ? updatedNote : note,
+      );
+      setNotes(updatedNotes);
+      // Update cache
+      sessionStorage.setItem("allNotes", JSON.stringify(updatedNotes));
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }

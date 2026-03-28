@@ -4,6 +4,51 @@ import path from "path";
 import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 
+// @desc    Get dashboard statistics (optimized single endpoint)
+export const getDashboardStats = async (req, res) => {
+  try {
+    const { userId, isAdmin } = req.query;
+
+    // Get total notes count
+    const totalNotes = await Note.countDocuments();
+
+    // Get user's uploaded notes count
+    let userUploadedCount = 0;
+    if (userId) {
+      userUploadedCount = await Note.countDocuments({
+        user: userId,
+        fileUrl: { $exists: true, $ne: null },
+      });
+    }
+
+    // Get user's favorites count
+    let userFavoriteCount = 0;
+    if (userId) {
+      const userFavorites = await Note.countDocuments({
+        favoritedBy: userId,
+      });
+      userFavoriteCount = userFavorites;
+    }
+
+    // Get total users count for admin
+    let totalUsersCount = 0;
+    if (isAdmin === "true") {
+      const User = mongoose.model("User");
+      totalUsersCount = await User.countDocuments();
+    }
+
+    res.json({
+      totalNotes,
+      favoriteNotes: userFavoriteCount,
+      uploadedNotes: userUploadedCount,
+      totalUsers: totalUsersCount,
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Get Cloudinary upload signature for direct upload
 export const getUploadSignature = async (req, res) => {
   try {
