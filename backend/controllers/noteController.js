@@ -9,9 +9,8 @@ export const getUploadSignature = async (req, res) => {
   try {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const params = {
-      timestamp: timestamp,
       folder: "notes-app",
-      resource_type: "auto",
+      timestamp: timestamp,
       type: "upload",
     };
 
