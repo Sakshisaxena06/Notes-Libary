@@ -55,6 +55,7 @@ export const getUploadSignature = async (req, res) => {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const params = {
       folder: "notes-app",
+      resource_type: "raw",
       timestamp: timestamp,
       type: "upload",
     };
@@ -70,6 +71,7 @@ export const getUploadSignature = async (req, res) => {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,
       folder: "notes-app",
+      resourceType: "raw",
     });
   } catch (error) {
     console.error("Error generating upload signature:", error);

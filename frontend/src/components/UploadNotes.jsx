@@ -278,10 +278,11 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("timestamp", signatureData.timestamp);
         cloudinaryFormData.append("api_key", signatureData.apiKey);
         cloudinaryFormData.append("folder", signatureData.folder);
+        cloudinaryFormData.append("resource_type", signatureData.resourceType);
         cloudinaryFormData.append("type", "upload");
 
         const cloudinaryResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/auto/upload`,
+          `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${signatureData.resourceType}/upload`,
           {
             method: "POST",
             body: cloudinaryFormData,
