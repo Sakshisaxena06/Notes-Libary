@@ -280,10 +280,7 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("folder", signatureData.folder);
         // ✅ FIX: Don't include resource_type in form data - it's in the URL path
         cloudinaryFormData.append("type", "upload");
-        cloudinaryFormData.append(
-          "access_mode",
-          signatureData.accessMode || "public",
-        ); // ✅ FIX: Ensure file is publicly accessible
+        // ✅ FIX: Removed access_mode to fix 404 error
 
         const cloudinaryResponse = await fetch(
           `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${signatureData.resourceType}/upload`,

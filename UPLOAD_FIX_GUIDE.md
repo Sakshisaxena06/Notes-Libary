@@ -121,18 +121,17 @@ You should see:
 
 ### Issue 6: "Failed to load resource: the server responded with a status of 401" (Cloudinary 401 error)
 
-**Solution**: This error occurs when trying to access a file from Cloudinary that is not publicly accessible. The file URL shows `/image/upload/` but the file is a PDF, which should be uploaded as `raw` resource type. The fix is to add `access_mode: "public"` to the upload parameters and ensure the correct resource type is used:
+**Solution**: This error occurs when trying to access a file from Cloudinary that is not publicly accessible. The file URL shows `/image/upload/` but the file is a PDF, which should be uploaded as `raw` resource type. The fix is to ensure the correct resource type is used:
 
 1. In `backend/controllers/noteController.js`:
-   - Added `access_mode: "public"` to the `getUploadSignature` function parameters
-   - Added `access_mode: "public"` to the `uploadFile` function parameters
    - Ensured `resource_type: "raw"` is always used for PDFs and documents (in URL path only)
    - **IMPORTANT**: Removed `resource_type` from signature parameters to fix "Invalid Signature" error
+   - **IMPORTANT**: Removed `access_mode` from signature parameters to fix "404" error
 
 2. In `frontend/src/components/UploadNotes.jsx`:
-   - Added `access_mode` parameter when uploading to Cloudinary
    - Ensured the upload URL uses the correct resource type (`/raw/upload/`)
    - **IMPORTANT**: Removed `resource_type` from form data to fix "Invalid Signature" error
+   - **IMPORTANT**: Removed `access_mode` from form data to fix "404" error
 
 This ensures that all uploaded files are publicly accessible and can be viewed without authentication.
 
@@ -144,12 +143,12 @@ This ensures that all uploaded files are publicly accessible and can be viewed w
 4. `backend/server.js` - Added test endpoint and error handling
 5. `frontend/src/utils/api.js` - Fixed Content-Type header for FormData uploads
 6. `frontend/src/components/UploadNotes.jsx` - Added user ID fallback and logging
-7. `backend/controllers/noteController.js` - Added `access_mode: "public"` to upload signature and upload_file function to fix 401 errors
-8. `frontend/src/components/UploadNotes.jsx` - Added `access_mode` parameter when uploading to Cloudinary
-9. `backend/controllers/noteController.js` - Ensured `resource_type: "raw"` is always used for PDFs and documents (in URL path only)
-10. `frontend/src/components/UploadNotes.jsx` - Ensured the upload URL uses the correct resource type (`/raw/upload/`)
-11. `backend/controllers/noteController.js` - **IMPORTANT**: Removed `resource_type` from signature parameters to fix "Invalid Signature" error
-12. `frontend/src/components/UploadNotes.jsx` - **IMPORTANT**: Removed `resource_type` from form data to fix "Invalid Signature" error
+7. `backend/controllers/noteController.js` - Ensured `resource_type: "raw"` is always used for PDFs and documents (in URL path only)
+8. `frontend/src/components/UploadNotes.jsx` - Ensured the upload URL uses the correct resource type (`/raw/upload/`)
+9. `backend/controllers/noteController.js` - **IMPORTANT**: Removed `resource_type` from signature parameters to fix "Invalid Signature" error
+10. `frontend/src/components/UploadNotes.jsx` - **IMPORTANT**: Removed `resource_type` from form data to fix "Invalid Signature" error
+11. `backend/controllers/noteController.js` - **IMPORTANT**: Removed `access_mode` from signature parameters to fix "404" error
+12. `frontend/src/components/UploadNotes.jsx` - **IMPORTANT**: Removed `access_mode` from form data to fix "404" error
 
 ## Testing Locally
 
