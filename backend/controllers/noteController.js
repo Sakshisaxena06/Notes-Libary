@@ -207,7 +207,7 @@ export const uploadFile = async (req, res) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: "notes-app",
-          resource_type: "auto", // supports PDF, images, docs
+          resource_type: "raw", // supports PDF, images, docs
           type: "upload", // ✅ FIX → makes file PUBLIC
         },
         (error, result) => {
