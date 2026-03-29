@@ -49,6 +49,34 @@ function AllNotes({ user, isAdmin }) {
         console.error("Error fetching data:", error);
         setLoading(false);
       });
+
+    // Polling: Refresh notes and subjects every 10 seconds
+    const pollingInterval = setInterval(() => {
+      Promise.all([
+        fetchWithAuth(`${BACKEND_URL}/api/notes`),
+        fetchWithAuth(`${BACKEND_URL}/api/subjects`),
+      ])
+        .then(([notesRes, subjectsRes]) => {
+          Promise.all([notesRes.json(), subjectsRes.json()]).then(
+            ([notesData, subjectsData]) => {
+              setNotes(notesData);
+              setSubjects(subjectsData);
+              // Update cache with fresh data
+              sessionStorage.setItem("allNotes", JSON.stringify(notesData));
+              sessionStorage.setItem(
+                "allSubjects",
+                JSON.stringify(subjectsData),
+              );
+            },
+          );
+        })
+        .catch((error) => {
+          console.error("Error polling data:", error);
+        });
+    }, 10000); // 10 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(pollingInterval);
   }, []);
 
   // Reset search when subject changes
