@@ -25,10 +25,6 @@ const NoteSchema = new mongoose.Schema(
       type: String,
       default: "General",
     },
-    unit: {
-      type: String,
-      default: null,
-    },
     isFavorite: {
       type: Boolean,
       default: false,
