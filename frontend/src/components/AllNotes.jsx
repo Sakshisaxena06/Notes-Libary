@@ -177,7 +177,10 @@ function AllNotes({ user, isAdmin }) {
 
       if (response.ok) {
         const newSubject = await response.json();
-        setSubjects([...subjects, newSubject]);
+        const updatedSubjects = [...subjects, newSubject];
+        setSubjects(updatedSubjects);
+        // Update cache
+        sessionStorage.setItem("allSubjects", JSON.stringify(updatedSubjects));
         setNewSubjectName("");
         setNewSubjectIcon("📄");
         setShowAddSubject(false);
@@ -206,7 +209,10 @@ function AllNotes({ user, isAdmin }) {
       );
 
       if (response.ok) {
-        setSubjects(subjects.filter((s) => s._id !== subjectId));
+        const updatedSubjects = subjects.filter((s) => s._id !== subjectId);
+        setSubjects(updatedSubjects);
+        // Update cache
+        sessionStorage.setItem("allSubjects", JSON.stringify(updatedSubjects));
         alert("Subject deleted successfully!");
       } else {
         const data = await response.json();
