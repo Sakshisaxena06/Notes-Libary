@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "migrate:public": "node scripts/migrateToPublic.js"
+    "migrate:public": "node scripts/migrateToPublic.js",
+    "check:files": "node scripts/checkAndFixFiles.js"
   },
   "keywords": [
     "notes",
