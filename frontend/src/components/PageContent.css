@@ -158,6 +158,12 @@
   font-size: 11px;
 }
 
+.file-size-limit {
+  color: #e94560 !important;
+  font-weight: 500;
+  margin-top: 8px !important;
+}
+
 .uploaded-files {
   background: white;
   padding: 24px;

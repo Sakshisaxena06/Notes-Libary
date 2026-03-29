@@ -66,6 +66,20 @@ function UploadNotes({ user, isAdmin }) {
   const handleFileSelect = (event) => {
     const selectedFiles = Array.from(event.target.files);
     if (selectedFiles.length > 0) {
+      // Check file size (Cloudinary free plan limit is 10MB for raw files)
+      const maxSize = 10 * 1024 * 1024; // 10 MB
+      const oversizedFiles = selectedFiles.filter(
+        (file) => file.size > maxSize,
+      );
+
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map((f) => f.name).join(", ");
+        alert(
+          `File(s) too large: ${fileNames}\n\nMaximum file size is 10 MB.\nPlease compress or split the file(s) before uploading.`,
+        );
+        return;
+      }
+
       setSelectedSubject(""); // Reset subject to force selection
       setShowSubjectSelection(true); // Show subject selection
     }
@@ -87,6 +101,18 @@ function UploadNotes({ user, isAdmin }) {
     setIsDragging(false);
     const droppedFiles = Array.from(event.dataTransfer.files);
     if (droppedFiles.length > 0) {
+      // Check file size (Cloudinary free plan limit is 10MB for raw files)
+      const maxSize = 10 * 1024 * 1024; // 10 MB
+      const oversizedFiles = droppedFiles.filter((file) => file.size > maxSize);
+
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map((f) => f.name).join(", ");
+        alert(
+          `File(s) too large: ${fileNames}\n\nMaximum file size is 10 MB.\nPlease compress or split the file(s) before uploading.`,
+        );
+        return;
+      }
+
       setSelectedSubject(""); // Reset subject to force selection
       setShowSubjectSelection(true); // Show subject selection
     }
@@ -441,6 +467,9 @@ function UploadNotes({ user, isAdmin }) {
       <div className="supported-formats">
         <h3>Supported Formats:</h3>
         <p>PDF, Word Documents (DOC/DOCX), Text Files, Images (PNG/JPG)</p>
+        <p className="file-size-limit">
+          Maximum file size: 10 MB (Cloudinary free plan limit)
+        </p>
       </div>
 
       {/* Subject Selection - Show when files are added */}
