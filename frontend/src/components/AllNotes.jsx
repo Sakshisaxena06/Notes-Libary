@@ -49,34 +49,6 @@ function AllNotes({ user, isAdmin }) {
         console.error("Error fetching data:", error);
         setLoading(false);
       });
-
-    // Polling: Refresh notes and subjects every 10 seconds
-    const pollingInterval = setInterval(() => {
-      Promise.all([
-        fetchWithAuth(`${BACKEND_URL}/api/notes`),
-        fetchWithAuth(`${BACKEND_URL}/api/subjects`),
-      ])
-        .then(([notesRes, subjectsRes]) => {
-          Promise.all([notesRes.json(), subjectsRes.json()]).then(
-            ([notesData, subjectsData]) => {
-              setNotes(notesData);
-              setSubjects(subjectsData);
-              // Update cache with fresh data
-              sessionStorage.setItem("allNotes", JSON.stringify(notesData));
-              sessionStorage.setItem(
-                "allSubjects",
-                JSON.stringify(subjectsData),
-              );
-            },
-          );
-        })
-        .catch((error) => {
-          console.error("Error polling data:", error);
-        });
-    }, 10000); // 10 seconds
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(pollingInterval);
   }, []);
 
   // Reset search when subject changes
@@ -205,10 +177,7 @@ function AllNotes({ user, isAdmin }) {
 
       if (response.ok) {
         const newSubject = await response.json();
-        const updatedSubjects = [...subjects, newSubject];
-        setSubjects(updatedSubjects);
-        // Update cache
-        sessionStorage.setItem("allSubjects", JSON.stringify(updatedSubjects));
+        setSubjects([...subjects, newSubject]);
         setNewSubjectName("");
         setNewSubjectIcon("📄");
         setShowAddSubject(false);
@@ -237,10 +206,7 @@ function AllNotes({ user, isAdmin }) {
       );
 
       if (response.ok) {
-        const updatedSubjects = subjects.filter((s) => s._id !== subjectId);
-        setSubjects(updatedSubjects);
-        // Update cache
-        sessionStorage.setItem("allSubjects", JSON.stringify(updatedSubjects));
+        setSubjects(subjects.filter((s) => s._id !== subjectId));
         alert("Subject deleted successfully!");
       } else {
         const data = await response.json();
