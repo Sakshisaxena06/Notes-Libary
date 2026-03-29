@@ -68,7 +68,13 @@ function Favorites({ user, isAdmin }) {
         setFavorites(favorites.filter((note) => note._id !== id));
       } else {
         const data = await response.json();
-        alert(data.message || "Cannot delete this note");
+        // If note not found (404), still remove from UI
+        if (response.status === 404) {
+          console.log("Note not found, removing from UI");
+          setFavorites(favorites.filter((note) => note._id !== id));
+        } else {
+          alert(data.message || "Cannot delete this note");
+        }
       }
     } catch (error) {
       console.error("Error deleting note:", error);

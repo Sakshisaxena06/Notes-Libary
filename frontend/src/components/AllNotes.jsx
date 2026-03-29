@@ -159,7 +159,16 @@ function AllNotes({ user, isAdmin }) {
         sessionStorage.setItem("allNotes", JSON.stringify(updatedNotes));
       } else {
         const data = await response.json();
-        alert(data.message || "Cannot delete this note");
+        // If note not found (404), still remove from UI
+        if (response.status === 404) {
+          console.log("Note not found, removing from UI");
+          const updatedNotes = notes.filter((note) => note._id !== id);
+          setNotes(updatedNotes);
+          // Update cache
+          sessionStorage.setItem("allNotes", JSON.stringify(updatedNotes));
+        } else {
+          alert(data.message || "Cannot delete this note");
+        }
       }
     } catch (error) {
       console.error("Error deleting note:", error);
