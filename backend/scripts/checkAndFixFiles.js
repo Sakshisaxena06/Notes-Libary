@@ -1,10 +1,17 @@
 import mongoose from "mongoose";
-import cloudinary from "../config/cloudinary.js";
+import { v2 as cloudinary } from "cloudinary";
 import Note from "../models/Note.js";
 import dotenv from "dotenv";
 
 // Load environment variables
 dotenv.config();
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -20,7 +27,7 @@ const connectDB = async () => {
 };
 
 // Check and fix files
-const checkAndFixFiles = async () => {
+const checkAndFixFiles = async (deleteMissing = false) => {
   try {
     console.log("Starting file check and fix...\n");
 
@@ -78,7 +85,8 @@ const checkAndFixFiles = async () => {
 
           successCount++;
         } catch (apiError) {
-          if (apiError.http_code === 404) {
+          console.log(`API Error:`, apiError);
+          if (apiError.error && apiError.error.http_code === 404) {
             console.log(`✗ File NOT found in Cloudinary (404)`);
             console.log(
               `  This file may have been deleted or never uploaded successfully`,
@@ -90,8 +98,16 @@ const checkAndFixFiles = async () => {
               cloudinaryId: note.cloudinaryId,
               fileUrl: note.fileUrl,
             });
+
+            if (deleteMissing) {
+              console.log(`  Deleting note from database...`);
+              await Note.findByIdAndDelete(note._id);
+              console.log(`  ✓ Note deleted`);
+            }
           } else {
-            console.log(`✗ Error checking file: ${apiError.message}`);
+            console.log(
+              `✗ Error checking file: ${apiError.message || apiError}`,
+            );
             errorCount++;
           }
         }
@@ -148,5 +164,11 @@ const checkAndFixFiles = async () => {
 // Run check and fix
 (async () => {
   await connectDB();
-  await checkAndFixFiles();
+  const deleteMissing = process.argv.includes("--delete-missing");
+  if (deleteMissing) {
+    console.log(
+      "⚠️  DELETE MISSING MODE: Notes with missing files will be deleted from database\n",
+    );
+  }
+  await checkAndFixFiles(deleteMissing);
 })();
