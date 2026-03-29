@@ -173,6 +173,10 @@ function UploadNotes({ user, isAdmin }) {
     }
 
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+
+    // Clear AllNotes cache so it will fetch fresh data
+    sessionStorage.removeItem("allNotes");
+    sessionStorage.removeItem("allSubjects");
   };
 
   const handleFavorite = async (index, e) => {
@@ -366,6 +370,10 @@ function UploadNotes({ user, isAdmin }) {
       setFiles([]);
       setSelectedSubject("");
       setShowSubjectSelection(false);
+
+      // Clear AllNotes cache so it will fetch fresh data
+      sessionStorage.removeItem("allNotes");
+      sessionStorage.removeItem("allSubjects");
 
       // Show success popup
       setShowPopup(true);
