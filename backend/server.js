@@ -7,6 +7,7 @@ import connectDB from "./config/db.js";
 import noteRoutes from "./routes/noteRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
+import unitRoutes from "./routes/unitRoutes.js";
 import { initDefaultSubjects } from "./controllers/subjectController.js";
 import { handleUploadError } from "./middleware/uploadMiddleware.js";
 
@@ -43,6 +44,7 @@ app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use("/api/notes", noteRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/subjects", subjectRoutes);
+app.use("/api/units", unitRoutes);
 
 // Upload error handling middleware
 app.use(handleUploadError);

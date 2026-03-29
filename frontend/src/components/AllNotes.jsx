@@ -7,14 +7,19 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 function AllNotes({ user, isAdmin }) {
   const [notes, setNotes] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedUnit, setSelectedUnit] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [prevSubject, setPrevSubject] = useState(null);
   const [showAddSubject, setShowAddSubject] = useState(false);
+  const [showAddUnit, setShowAddUnit] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectIcon, setNewSubjectIcon] = useState("📄");
+  const [newUnitName, setNewUnitName] = useState("");
+  const [newUnitIcon, setNewUnitIcon] = useState("📚");
 
   useEffect(() => {
     // Check cache first
@@ -51,6 +56,16 @@ function AllNotes({ user, isAdmin }) {
       });
   }, []);
 
+  // Fetch units when subject is selected
+  useEffect(() => {
+    if (selectedSubject && selectedSubject !== "All") {
+      fetchUnits(selectedSubject);
+    } else {
+      setUnits([]);
+      setSelectedUnit(null);
+    }
+  }, [selectedSubject]);
+
   // Reset search when subject changes
   useEffect(() => {
     if (prevSubject !== null && prevSubject !== selectedSubject) {
@@ -67,6 +82,18 @@ function AllNotes({ user, isAdmin }) {
       setSubjects(data);
     } catch (error) {
       console.error("Error fetching subjects:", error);
+    }
+  };
+
+  const fetchUnits = async (subject) => {
+    try {
+      const response = await fetchWithAuth(
+        `${BACKEND_URL}/api/units/subject/${encodeURIComponent(subject)}`,
+      );
+      const data = await response.json();
+      setUnits(data);
+    } catch (error) {
+      console.error("Error fetching units:", error);
     }
   };
 
@@ -90,7 +117,12 @@ function AllNotes({ user, isAdmin }) {
   const filteredNotes = selectedSubject
     ? selectedSubject === "All"
       ? notes
-      : notes.filter((note) => note.subject === selectedSubject)
+      : selectedUnit
+        ? notes.filter(
+            (note) =>
+              note.subject === selectedSubject && note.unit === selectedUnit,
+          )
+        : notes.filter((note) => note.subject === selectedSubject)
     : [];
 
   // Search filter for notes within a subject
@@ -215,6 +247,69 @@ function AllNotes({ user, isAdmin }) {
     } catch (error) {
       console.error("Error deleting subject:", error);
       alert("Failed to delete subject");
+    }
+  };
+
+  const handleAddUnit = async (e) => {
+    e.preventDefault();
+    if (!newUnitName.trim()) {
+      alert("Please enter a unit name");
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(`${BACKEND_URL}/api/units`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newUnitName,
+          subject: selectedSubject,
+          icon: newUnitIcon,
+        }),
+      });
+
+      if (response.ok) {
+        const newUnit = await response.json();
+        setUnits([...units, newUnit]);
+        setNewUnitName("");
+        setNewUnitIcon("📚");
+        setShowAddUnit(false);
+        alert("Unit added successfully!");
+      } else {
+        const data = await response.json();
+        alert(data.message || "Failed to add unit");
+      }
+    } catch (error) {
+      console.error("Error adding unit:", error);
+      alert("Failed to add unit");
+    }
+  };
+
+  const handleDeleteUnit = async (unitId, unitName) => {
+    if (!confirm(`Are you sure you want to delete "${unitName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(
+        `${BACKEND_URL}/api/units/${unitId}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (response.ok) {
+        setUnits(units.filter((u) => u._id !== unitId));
+        alert("Unit deleted successfully!");
+      } else {
+        const data = await response.json();
+        alert(data.message || "Failed to delete unit");
+      }
+    } catch (error) {
+      console.error("Error deleting unit:", error);
+      alert("Failed to delete unit");
     }
   };
 

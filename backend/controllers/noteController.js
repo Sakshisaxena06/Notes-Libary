@@ -125,6 +125,7 @@ export const createNote = async (req, res) => {
       content,
       category,
       subject,
+      unit,
       isFavorite,
       isSaved,
       fileUrl,
@@ -143,6 +144,7 @@ export const createNote = async (req, res) => {
       content,
       category: category || "general",
       subject: subject || "General",
+      unit: unit || null,
       isFavorite: isFavorite || false,
       isSaved: isSaved || false,
       fileUrl,
@@ -247,6 +249,7 @@ export const updateNote = async (req, res) => {
       content,
       category,
       subject,
+      unit,
       isFavorite,
       isSaved,
       fileUrl,
@@ -262,6 +265,7 @@ export const updateNote = async (req, res) => {
       note.content = content || note.content;
       note.category = category || note.category;
       note.subject = subject || note.subject;
+      note.unit = unit !== undefined ? unit : note.unit;
       note.isFavorite = isFavorite !== undefined ? isFavorite : note.isFavorite;
       note.isSaved = isSaved !== undefined ? isSaved : note.isSaved;
       note.fileUrl = fileUrl || note.fileUrl;
