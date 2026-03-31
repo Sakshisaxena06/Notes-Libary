@@ -17,6 +17,7 @@
   padding: 24px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  position: relative;
 }
 
 .sidebar-title {
@@ -89,7 +90,7 @@
   display: none;
   position: fixed;
   top: 16px;
-  left: 16px;
+  right: 16px;
   z-index: 1001;
   background: #1a1a2e;
   color: white;
@@ -154,8 +155,8 @@
 .sidebar-close {
   display: none;
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 24px;
+  right: 20px;
   background: none;
   border: none;
   color: #b8b8b8;
