@@ -428,7 +428,7 @@ function AllNotes({ user, isAdmin }) {
                         </a>
                       ) : note.fileType === "application/pdf" ? (
                         <a
-                          href={note.fileUrl}
+                          href={`${BACKEND_URL}/api/proxy-pdf?url=${encodeURIComponent(note.fileUrl)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="file-link"

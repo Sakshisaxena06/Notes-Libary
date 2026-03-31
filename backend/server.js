@@ -55,6 +55,41 @@ app.get("/", (req, res) => {
   res.send("Notes API running");
 });
 
+// Proxy endpoint for PDF files to avoid CORS issues
+app.get("/api/proxy-pdf", async (req, res) => {
+  try {
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ message: "URL parameter is required" });
+    }
+
+    // Validate that the URL is from Cloudinary
+    if (!url.includes("cloudinary.com")) {
+      return res.status(400).json({ message: "Invalid URL" });
+    }
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return res
+        .status(response.status)
+        .json({ message: "Failed to fetch file" });
+    }
+
+    // Set appropriate headers
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+
+    // Stream the response
+    response.body.pipe(res);
+  } catch (error) {
+    console.error("Proxy PDF error:", error);
+    res.status(500).json({ message: "Failed to proxy PDF file" });
+  }
+});
+
 // Test upload endpoint
 app.get("/api/test-upload", (req, res) => {
   const cloudinaryConfigured =

@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { fetchWithAuth } from "../utils/api";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import "./PageContent.css";
+
+// Set up PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
@@ -8,6 +14,9 @@ function Favorites({ user, isAdmin }) {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNote, setSelectedNote] = useState(null);
+  const [numPages, setNumPages] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1.0);
 
   useEffect(() => {
     fetchFavorites();
@@ -91,6 +100,34 @@ function Favorites({ user, isAdmin }) {
 
   const closePreview = () => {
     setSelectedNote(null);
+    setNumPages(null);
+    setPageNumber(1);
+    setScale(1.0);
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+    setPageNumber(1);
+  };
+
+  const zoomIn = () => {
+    setScale((prev) => Math.min(prev + 0.25, 3.0));
+  };
+
+  const zoomOut = () => {
+    setScale((prev) => Math.max(prev - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setScale(1.0);
+  };
+
+  const goToPrevPage = () => {
+    setPageNumber((prev) => Math.max(prev - 1, 1));
+  };
+
+  const goToNextPage = () => {
+    setPageNumber((prev) => Math.min(prev + 1, numPages));
   };
 
   if (loading) {
@@ -118,7 +155,66 @@ function Favorites({ user, isAdmin }) {
             {selectedNote.fileType?.startsWith("image/") ? (
               <img src={selectedNote.fileUrl} alt={selectedNote.title} />
             ) : selectedNote.fileType === "application/pdf" ? (
-              <iframe src={selectedNote.fileUrl} title={selectedNote.title} />
+              <div className="pdf-viewer-container">
+                <div className="pdf-controls">
+                  <div className="zoom-controls">
+                    <button
+                      onClick={zoomOut}
+                      disabled={scale <= 0.5}
+                      title="Zoom Out"
+                    >
+                      −
+                    </button>
+                    <span className="zoom-level">
+                      {Math.round(scale * 100)}%
+                    </span>
+                    <button
+                      onClick={zoomIn}
+                      disabled={scale >= 3.0}
+                      title="Zoom In"
+                    >
+                      +
+                    </button>
+                    <button onClick={resetZoom} title="Reset Zoom">
+                      Reset
+                    </button>
+                  </div>
+                  {numPages && numPages > 1 && (
+                    <div className="page-controls">
+                      <button onClick={goToPrevPage} disabled={pageNumber <= 1}>
+                        ‹ Prev
+                      </button>
+                      <span className="page-info">
+                        Page {pageNumber} of {numPages}
+                      </span>
+                      <button
+                        onClick={goToNextPage}
+                        disabled={pageNumber >= numPages}
+                      >
+                        Next ›
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="pdf-document-wrapper">
+                  <Document
+                    file={`${BACKEND_URL}/api/proxy-pdf?url=${encodeURIComponent(selectedNote.fileUrl)}`}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    loading={<div className="pdf-loading">Loading PDF...</div>}
+                    error={
+                      <div className="pdf-error">Failed to load PDF file.</div>
+                    }
+                  >
+                    <Page
+                      pageNumber={pageNumber}
+                      scale={scale}
+                      loading={
+                        <div className="pdf-loading">Loading page...</div>
+                      }
+                    />
+                  </Document>
+                </div>
+              </div>
             ) : (
               <div className="preview-not-available">
                 <span className="file-icon">
