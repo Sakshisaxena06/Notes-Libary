@@ -442,3 +442,109 @@
     padding: 24px;
   }
 }
+
+@media (max-width: 480px) {
+  .landing-container {
+    padding: 20px 16px;
+  }
+
+  .landing-split {
+    gap: 30px;
+  }
+
+  .landing-header h1 {
+    font-size: 26px;
+  }
+
+  .landing-header p {
+    font-size: 16px;
+  }
+
+  .landing-subtitle {
+    font-size: 16px !important;
+  }
+
+  .get-started-btn {
+    padding: 12px 28px;
+    font-size: 16px;
+  }
+
+  .login-text {
+    font-size: 14px;
+  }
+
+  .auth-buttons {
+    max-width: 100%;
+  }
+
+  .auth-btn {
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+
+  .landing-features {
+    gap: 12px;
+  }
+
+  .feature {
+    padding: 16px;
+  }
+
+  .feature-icon {
+    font-size: 28px;
+  }
+
+  .feature h3 {
+    font-size: 14px;
+  }
+
+  .feature p {
+    font-size: 12px;
+  }
+
+  .auth-container {
+    padding: 16px;
+  }
+
+  .auth-card {
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .auth-card h2 {
+    font-size: 24px;
+  }
+
+  .auth-subtitle {
+    font-size: 14px;
+  }
+
+  .admin-icon {
+    font-size: 40px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-group input {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .auth-submit-btn {
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .auth-switch {
+    font-size: 14px;
+  }
+
+  .back-btn {
+    top: 12px;
+    left: 12px;
+    font-size: 14px;
+    padding: 6px;
+  }
+}

@@ -1776,3 +1776,439 @@
   background: #d63d56;
   transform: translateY(-2px);
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+  .page-content {
+    padding: 16px;
+  }
+
+  .dashboard-welcome {
+    padding-left: 0;
+    padding-top: 60px;
+  }
+
+  .dashboard-welcome h1 {
+    font-size: 28px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-number {
+    font-size: 24px;
+  }
+
+  .upload-box {
+    padding: 32px 20px;
+  }
+
+  .upload-icon {
+    font-size: 36px;
+  }
+
+  .upload-text {
+    font-size: 16px;
+  }
+
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .notes-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .note-card {
+    padding: 16px;
+  }
+
+  .subject-cards-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .subject-click-card {
+    padding: 20px;
+    min-height: 100px;
+  }
+
+  .subject-card-icon {
+    font-size: 28px;
+  }
+
+  .subject-click-card h3 {
+    font-size: 14px;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+    gap: 16px;
+  }
+
+  .dashboard-stat-card {
+    padding: 24px 20px;
+    gap: 16px;
+  }
+
+  .dashboard-stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .dashboard-stat-card .stat-count {
+    font-size: 28px;
+  }
+
+  .dashboard-stat-card .stat-label {
+    font-size: 14px;
+  }
+
+  .profile-container {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-main-card {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .my-notes-section {
+    grid-column: 1;
+  }
+
+  .profile-settings-card {
+    grid-column: 1;
+  }
+
+  .notes-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 24px;
+  }
+
+  .preview-content {
+    max-width: 95%;
+    max-height: 90%;
+    padding: 16px;
+  }
+
+  .success-popup {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    padding: 12px 16px;
+  }
+
+  .subject-selection {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .subject-selection .subject-select {
+    min-width: 100%;
+  }
+
+  .add-subject-form form {
+    flex-direction: column;
+  }
+
+  .subject-input {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 12px;
+  }
+
+  .dashboard-welcome {
+    padding-top: 50px;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-welcome h1 {
+    font-size: 24px;
+  }
+
+  .dashboard-welcome p {
+    font-size: 14px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-card h3 {
+    font-size: 12px;
+  }
+
+  .stat-number {
+    font-size: 20px;
+  }
+
+  .upload-box {
+    padding: 24px 16px;
+  }
+
+  .upload-icon {
+    font-size: 32px;
+  }
+
+  .upload-text {
+    font-size: 14px;
+  }
+
+  .file-label {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .upload-btn {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+
+  .file-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .file-card {
+    padding: 12px 8px;
+  }
+
+  .file-card .file-icon {
+    font-size: 24px;
+  }
+
+  .file-card .file-name {
+    font-size: 10px;
+  }
+
+  .file-card .file-size {
+    font-size: 9px;
+  }
+
+  .action-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .notes-grid {
+    gap: 12px;
+  }
+
+  .note-card {
+    padding: 14px;
+  }
+
+  .note-header h3 {
+    font-size: 16px;
+  }
+
+  .note-content {
+    font-size: 13px;
+  }
+
+  .subject-cards-container {
+    grid-template-columns: 1fr;
+  }
+
+  .subject-click-card {
+    padding: 16px;
+    min-height: 80px;
+  }
+
+  .subject-card-icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+
+  .subject-click-card h3 {
+    font-size: 13px;
+  }
+
+  .subject-card-count {
+    font-size: 11px;
+  }
+
+  .dashboard-stats {
+    gap: 12px;
+  }
+
+  .dashboard-stat-card {
+    padding: 20px 16px;
+    gap: 12px;
+  }
+
+  .dashboard-stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .dashboard-stat-card .stat-count {
+    font-size: 24px;
+  }
+
+  .dashboard-stat-card .stat-label {
+    font-size: 12px;
+  }
+
+  .profile-card {
+    padding: 24px;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 28px;
+  }
+
+  .profile-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .profile-name {
+    font-size: 20px !important;
+  }
+
+  .profile-email {
+    font-size: 12px !important;
+  }
+
+  .settings-section {
+    padding: 20px;
+  }
+
+  .settings-section h3 {
+    font-size: 16px;
+  }
+
+  .setting-item {
+    padding: 14px 0;
+  }
+
+  .logout-confirmation {
+    padding: 24px;
+  }
+
+  .logout-btn {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
+  .modal-content h2 {
+    font-size: 20px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-group input {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .submit-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .preview-content h3 {
+    font-size: 14px;
+  }
+
+  .download-link {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .search-input {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .search-icon-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .subject-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .subject-select {
+    width: 100%;
+  }
+
+  .profile-stats-card .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-stats-card .stat-item {
+    padding: 12px;
+  }
+
+  .profile-stats-card .stat-number {
+    font-size: 24px;
+  }
+
+  .profile-stats-card .stat-label {
+    font-size: 11px;
+  }
+
+  .notes-cards {
+    gap: 12px;
+  }
+
+  .notes-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .notes-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .notes-count {
+    font-size: 24px;
+  }
+
+  .notes-label {
+    font-size: 12px;
+  }
+
+  .profile-settings-card .logout-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
