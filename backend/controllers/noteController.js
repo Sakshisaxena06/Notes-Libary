@@ -72,7 +72,7 @@ export const getUploadSignature = async (req, res) => {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,
       folder: "notes-app",
-      resourceType: "raw", // ✅ FIX: Always return "raw" for PDFs and documents (used in URL path)
+      resourceType: "auto", // ✅ FIX: Use auto to let Cloudinary detect the type
       accessMode: "public", // ✅ FIX: Ensure file is publicly accessible
     });
   } catch (error) {
@@ -209,7 +209,7 @@ export const uploadFile = async (req, res) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: "notes-app",
-          resource_type: "raw", // supports PDF, images, docs
+          resource_type: "auto", // ✅ FIX: Use auto to let Cloudinary detect the type
           type: "upload", // ✅ FIX → makes file PUBLIC
           access_mode: "public", // ✅ FIX: Ensure file is publicly accessible
         },

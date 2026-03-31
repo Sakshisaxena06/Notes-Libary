@@ -198,7 +198,7 @@ function Favorites({ user, isAdmin }) {
                 </div>
                 <div className="pdf-document-wrapper">
                   <Document
-                    file={`${BACKEND_URL}/api/proxy-pdf?url=${encodeURIComponent(selectedNote.fileUrl)}`}
+                    file={selectedNote.fileUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={<div className="pdf-loading">Loading PDF...</div>}
                     error={

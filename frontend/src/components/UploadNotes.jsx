@@ -229,15 +229,7 @@ function UploadNotes({ user, isAdmin }) {
 
     if (file.fileUrl) {
       // It's an uploaded file from the backend (Cloudinary URL is already absolute)
-      // Use proxy for PDFs to avoid CORS issues
-      if (
-        file.type === "application/pdf" ||
-        file.name?.toLowerCase().endsWith(".pdf")
-      ) {
-        fileURL = `${BACKEND_URL}/api/proxy-pdf?url=${encodeURIComponent(file.fileUrl)}`;
-      } else {
-        fileURL = file.fileUrl;
-      }
+      fileURL = file.fileUrl;
       fileName = file.name;
       fileType = file.type;
     } else {

@@ -69,12 +69,26 @@ app.get("/api/proxy-pdf", async (req, res) => {
       return res.status(400).json({ message: "Invalid URL" });
     }
 
-    const response = await fetch(url);
+    console.log("Proxying PDF from:", url);
+
+    // Try fetching the file
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (fetchError) {
+      console.error("Fetch error:", fetchError.message);
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch file from Cloudinary" });
+    }
 
     if (!response.ok) {
+      console.error("Cloudinary error:", response.status, response.statusText);
       return res
         .status(response.status)
-        .json({ message: "Failed to fetch file" });
+        .json({
+          message: `Failed to fetch file: ${response.status} ${response.statusText}`,
+        });
     }
 
     // Set appropriate headers
