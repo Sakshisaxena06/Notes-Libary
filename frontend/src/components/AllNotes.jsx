@@ -4,6 +4,15 @@ import "./PageContent.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
+// ✅ FIX: Transform PDF URLs to use /raw/upload/ instead of /image/upload/
+const getCorrectFileUrl = (fileUrl, fileType) => {
+  if (fileType === "application/pdf" && fileUrl) {
+    // Replace /image/upload/ with /raw/upload/ for PDFs
+    return fileUrl.replace("/image/upload/", "/raw/upload/");
+  }
+  return fileUrl;
+};
+
 function AllNotes({ user, isAdmin }) {
   const [notes, setNotes] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -428,7 +437,7 @@ function AllNotes({ user, isAdmin }) {
                         </a>
                       ) : note.fileType === "application/pdf" ? (
                         <a
-                          href={note.fileUrl}
+                          href={getCorrectFileUrl(note.fileUrl, note.fileType)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="file-link"

@@ -10,6 +10,15 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
+// ✅ FIX: Transform PDF URLs to use /raw/upload/ instead of /image/upload/
+const getCorrectFileUrl = (fileUrl, fileType) => {
+  if (fileType === "application/pdf" && fileUrl) {
+    // Replace /image/upload/ with /raw/upload/ for PDFs
+    return fileUrl.replace("/image/upload/", "/raw/upload/");
+  }
+  return fileUrl;
+};
+
 function UploadNotes({ user, isAdmin }) {
   const [files, setFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -329,8 +338,12 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("type", "upload");
         cloudinaryFormData.append("access_mode", "public"); // ✅ FIX: Ensure file is publicly accessible
 
+        // ✅ FIX: Use "raw" resource type for PDFs to avoid 401 errors
+        const resourceType =
+          file.type === "application/pdf" ? "raw" : signatureData.resourceType;
+
         const cloudinaryResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${signatureData.resourceType}/upload`,
+          `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${resourceType}/upload`,
           {
             method: "POST",
             body: cloudinaryFormData,
@@ -513,7 +526,7 @@ function UploadNotes({ user, isAdmin }) {
                 </div>
                 <div className="pdf-document-wrapper">
                   <Document
-                    file={previewFile.url}
+                    file={getCorrectFileUrl(previewFile.url, previewFile.type)}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={<div className="pdf-loading">Loading PDF...</div>}
                     error={
@@ -535,7 +548,7 @@ function UploadNotes({ user, isAdmin }) {
                 <span className="file-icon">{getFileIcon(previewFile)}</span>
                 <p>Preview not available</p>
                 <a
-                  href={previewFile.url}
+                  href={getCorrectFileUrl(previewFile.url, previewFile.type)}
                   download={previewFile.name}
                   className="download-link"
                 >

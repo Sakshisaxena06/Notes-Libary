@@ -10,6 +10,15 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
+// ✅ FIX: Transform PDF URLs to use /raw/upload/ instead of /image/upload/
+const getCorrectFileUrl = (fileUrl, fileType) => {
+  if (fileType === "application/pdf" && fileUrl) {
+    // Replace /image/upload/ with /raw/upload/ for PDFs
+    return fileUrl.replace("/image/upload/", "/raw/upload/");
+  }
+  return fileUrl;
+};
+
 function Favorites({ user, isAdmin }) {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -198,7 +207,10 @@ function Favorites({ user, isAdmin }) {
                 </div>
                 <div className="pdf-document-wrapper">
                   <Document
-                    file={selectedNote.fileUrl}
+                    file={getCorrectFileUrl(
+                      selectedNote.fileUrl,
+                      selectedNote.fileType,
+                    )}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={<div className="pdf-loading">Loading PDF...</div>}
                     error={
@@ -222,7 +234,10 @@ function Favorites({ user, isAdmin }) {
                 </span>
                 <p>Preview not available</p>
                 <a
-                  href={selectedNote.fileUrl}
+                  href={getCorrectFileUrl(
+                    selectedNote.fileUrl,
+                    selectedNote.fileType,
+                  )}
                   download={selectedNote.fileName}
                   className="download-link"
                 >

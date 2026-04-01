@@ -205,11 +205,15 @@ export const uploadFile = async (req, res) => {
       size: req.file.size,
     });
 
+    // ✅ FIX: Use "raw" resource type for PDFs to avoid 401 errors
+    const resourceType =
+      req.file.mimetype === "application/pdf" ? "raw" : "auto";
+
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: "notes-app",
-          resource_type: "auto", // ✅ FIX: Use auto to let Cloudinary detect the type
+          resource_type: resourceType, // ✅ FIX: Use raw for PDFs, auto for others
           type: "upload", // ✅ FIX → makes file PUBLIC
           access_mode: "public", // ✅ FIX: Ensure file is publicly accessible
         },
