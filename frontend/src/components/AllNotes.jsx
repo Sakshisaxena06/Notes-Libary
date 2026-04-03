@@ -4,11 +4,7 @@ import "./PageContent.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-// Transform raw URLs to image URLs for backwards compatibility with old PDFs
 const getCorrectFileUrl = (fileUrl, fileType) => {
-  if (fileUrl && fileUrl.includes("/raw/upload/")) {
-    return fileUrl.replace("/raw/upload/", "/image/upload/");
-  }
   return fileUrl;
 };
 

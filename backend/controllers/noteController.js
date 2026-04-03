@@ -55,10 +55,9 @@ export const getUploadSignature = async (req, res) => {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const params = {
       folder: "notes-app",
-      // ✅ FIX: Don't include resource_type in signature params - it's in the URL path
       timestamp: timestamp,
       type: "upload",
-      access_mode: "public", // ✅ FIX: Ensure file is publicly accessible
+      access_mode: "public",
     };
 
     const signature = cloudinary.utils.api_sign_request(
@@ -72,8 +71,8 @@ export const getUploadSignature = async (req, res) => {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,
       folder: "notes-app",
-      resourceType: "auto", // ✅ FIX: Use auto to let Cloudinary detect the type
-      accessMode: "public", // ✅ FIX: Ensure file is publicly accessible
+      resourceType: "auto",
+      accessMode: "public",
     });
   } catch (error) {
     console.error("Error generating upload signature:", error);

@@ -330,12 +330,11 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("timestamp", signatureData.timestamp);
         cloudinaryFormData.append("api_key", signatureData.apiKey);
         cloudinaryFormData.append("folder", signatureData.folder);
-        // ✅ FIX: Don't include resource_type in form data - it's in the URL path
         cloudinaryFormData.append("type", "upload");
-        cloudinaryFormData.append("access_mode", "public"); // ✅ FIX: Ensure file is publicly accessible
+        cloudinaryFormData.append("access_mode", "public");
 
-        // Use image resource type to ensure publicly accessible URLs for all file types
-        const resourceType = "raw";
+        // Use raw for PDFs, auto for other files
+        const resourceType = file.type === "application/pdf" ? "raw" : "auto";
 
         const cloudinaryResponse = await fetch(
           `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${resourceType}/upload`,
