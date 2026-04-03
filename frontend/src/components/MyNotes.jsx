@@ -10,8 +10,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-// No longer need to transform PDF URLs - Cloudinary auto type handles PDFs correctly
+// Transform raw URLs to image URLs for backwards compatibility with old PDFs
 const getCorrectFileUrl = (fileUrl, fileType) => {
+  if (fileUrl && fileUrl.includes("/raw/upload/")) {
+    return fileUrl.replace("/raw/upload/", "/image/upload/");
+  }
   return fileUrl;
 };
 

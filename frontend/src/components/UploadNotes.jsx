@@ -10,8 +10,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-// No longer need to transform PDF URLs - Cloudinary auto type handles PDFs correctly
+// Transform raw URLs to image URLs for backwards compatibility with old PDFs
 const getCorrectFileUrl = (fileUrl, fileType) => {
+  if (fileUrl && fileUrl.includes("/raw/upload/")) {
+    return fileUrl.replace("/raw/upload/", "/image/upload/");
+  }
   return fileUrl;
 };
 
@@ -334,9 +337,8 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("type", "upload");
         cloudinaryFormData.append("access_mode", "public"); // ✅ FIX: Ensure file is publicly accessible
 
-        // ✅ FIX: Use "raw" resource type for PDFs to avoid 401 errors
-        const resourceType =
-          file.type === "application/pdf" ? "raw" : signatureData.resourceType;
+        // ✅ FIX: Use "auto" resource type for all files including PDFs
+        const resourceType = signatureData.resourceType || "auto";
 
         const cloudinaryResponse = await fetch(
           `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${resourceType}/upload`,
