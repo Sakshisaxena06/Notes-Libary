@@ -335,7 +335,7 @@ function UploadNotes({ user, isAdmin }) {
         cloudinaryFormData.append("access_mode", "public"); // ✅ FIX: Ensure file is publicly accessible
 
         // Use image resource type to ensure publicly accessible URLs for all file types
-        const resourceType = "image";
+        const resourceType = "raw";
 
         const cloudinaryResponse = await fetch(
           `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${resourceType}/upload`,
