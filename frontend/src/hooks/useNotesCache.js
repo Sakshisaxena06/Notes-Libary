@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchWithAuth } from "../utils/api";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 const createCacheKey = (endpoint, params = {}) => {
   const paramString = Object.keys(params).length > 0
     ? `?${new URLSearchParams(params).toString()}`
@@ -42,7 +44,7 @@ export function useNotesCache() {
     abortControllers.current[cacheKey] = controller;
 
     try {
-      const url = createCacheKey(endpoint, params);
+      const url = `${BACKEND_URL}${createCacheKey(endpoint, params)}`;
       const response = await fetchWithAuth(url, {
         signal: controller.signal,
         ...options
