@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { fetchWithAuth } from "../utils/api";
+import { useNotesCache } from "../hooks/useNotesCache";
 import "./PageContent.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-const getCorrectFileUrl = (fileUrl, fileType) => {
+const getCorrectFileUrl = (fileUrl) => {
   return fileUrl;
 };
 
@@ -20,103 +21,51 @@ function AllNotes({ user, isAdmin }) {
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectIcon, setNewSubjectIcon] = useState("📄");
 
+  const { fetchWithCache, clearCache } = useNotesCache(user, isAdmin);
+
   useEffect(() => {
-    // Check cache first
-    const cachedNotes = sessionStorage.getItem("allNotes");
-    const cachedSubjects = sessionStorage.getItem("allSubjects");
+    let isMounted = true;
+    let ignore = false;
 
-    if (cachedNotes && cachedSubjects) {
-      setNotes(JSON.parse(cachedNotes));
-      setSubjects(JSON.parse(cachedSubjects));
-      setLoading(false);
-      return;
-    }
-
-    // Fetch notes and subjects in parallel for faster loading
-    Promise.all([
-      fetchWithAuth(`${BACKEND_URL}/api/notes`),
-      fetchWithAuth(`${BACKEND_URL}/api/subjects`),
-    ])
-      .then(([notesRes, subjectsRes]) => {
-        Promise.all([notesRes.json(), subjectsRes.json()]).then(
-          ([notesData, subjectsData]) => {
-            setNotes(notesData);
-            setSubjects(subjectsData);
-            // Cache the data
-            sessionStorage.setItem("allNotes", JSON.stringify(notesData));
-            sessionStorage.setItem("allSubjects", JSON.stringify(subjectsData));
-            setLoading(false);
-          },
-        );
-      })
-      .catch((error) => {
+    const loadData = async () => {
+      try {
+        const [notesData, subjectsData] = await Promise.all([
+          fetchWithCache("/api/notes", {}, { cacheKey: "allNotes", cacheDuration: 60000 }),
+          fetchWithCache("/api/subjects", {}, { cacheKey: "allSubjects", cacheDuration: 300000 })
+        ]);
+        
+        if (!ignore && isMounted) {
+          setNotes(notesData || []);
+          setSubjects(subjectsData || []);
+        }
+      } catch (error) {
         console.error("Error fetching data:", error);
-        setLoading(false);
-      });
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-    // Polling: Refresh notes and subjects every 10 seconds
-    const pollingInterval = setInterval(() => {
-      Promise.all([
-        fetchWithAuth(`${BACKEND_URL}/api/notes`),
-        fetchWithAuth(`${BACKEND_URL}/api/subjects`),
-      ])
-        .then(([notesRes, subjectsRes]) => {
-          Promise.all([notesRes.json(), subjectsRes.json()]).then(
-            ([notesData, subjectsData]) => {
-              setNotes(notesData);
-              setSubjects(subjectsData);
-              // Update cache with fresh data
-              sessionStorage.setItem("allNotes", JSON.stringify(notesData));
-              sessionStorage.setItem(
-                "allSubjects",
-                JSON.stringify(subjectsData),
-              );
-            },
-          );
-        })
-        .catch((error) => {
-          console.error("Error polling data:", error);
-        });
-    }, 10000); // 10 seconds
+    loadData();
 
-    // Cleanup interval on component unmount
-    return () => clearInterval(pollingInterval);
-  }, []);
+    return () => {
+      ignore = true;
+      isMounted = false;
+    };
+  }, [fetchWithCache]);
 
-  // Reset search when subject changes
   useEffect(() => {
     if (prevSubject !== null && prevSubject !== selectedSubject) {
       setSearchQuery("");
       setShowSearch(false);
     }
     setPrevSubject(selectedSubject);
-  }, [selectedSubject]);
-
-  const fetchSubjects = async () => {
-    try {
-      const response = await fetchWithAuth(`${BACKEND_URL}/api/subjects`);
-      const data = await response.json();
-      setSubjects(data);
-    } catch (error) {
-      console.error("Error fetching subjects:", error);
-    }
-  };
+  }, [selectedSubject, prevSubject]);
 
   const getSubjectIcon = (subjectName) => {
     const subject = subjects.find((s) => s.name === subjectName);
     return subject?.icon || "📄";
-  };
-
-  const fetchNotes = async () => {
-    try {
-      const response = await fetchWithAuth(`${BACKEND_URL}/api/notes`);
-      const data = await response.json();
-      setNotes(data);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-      setLoading(false);
-    }
   };
 
   const filteredNotes = selectedSubject
@@ -159,17 +108,14 @@ function AllNotes({ user, isAdmin }) {
       if (response.ok) {
         const updatedNotes = notes.filter((note) => note._id !== id);
         setNotes(updatedNotes);
-        // Update cache
-        sessionStorage.setItem("allNotes", JSON.stringify(updatedNotes));
+        clearCache("allNotes");
       } else {
         const data = await response.json();
-        // If note not found (404), still remove from UI
         if (response.status === 404) {
           console.log("Note not found, removing from UI");
           const updatedNotes = notes.filter((note) => note._id !== id);
           setNotes(updatedNotes);
-          // Update cache
-          sessionStorage.setItem("allNotes", JSON.stringify(updatedNotes));
+          clearCache("allNotes");
         } else {
           alert(data.message || "Cannot delete this note");
         }
@@ -193,8 +139,6 @@ function AllNotes({ user, isAdmin }) {
         note._id === id ? updatedNote : note,
       );
       setNotes(updatedNotes);
-      // Update cache
-      sessionStorage.setItem("allNotes", JSON.stringify(updatedNotes));
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }

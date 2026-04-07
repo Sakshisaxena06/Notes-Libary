@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchWithAuth } from "../utils/api";
 import { Document, Page, pdfjs } from "react-pdf";
+import { useNotesCache } from "../hooks/useNotesCache";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import "./PageContent.css";
 
-// Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-const getCorrectFileUrl = (fileUrl, fileType) => {
+const getCorrectFileUrl = (fileUrl) => {
   return fileUrl;
 };
 
@@ -22,21 +22,21 @@ function MyNotes({ user, isAdmin }) {
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
 
-  useEffect(() => {
-    if (user?._id) {
-      fetchUserNotes();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
+  const { fetchWithCache, invalidateCache } = useNotesCache(user, isAdmin);
 
-  const fetchUserNotes = async () => {
+  const fetchUserNotes = useCallback(async () => {
+    if (!user?._id) {
+      setLoading(false);
+      return;
+    }
+    
     try {
-      const response = await fetchWithAuth(
-        `${BACKEND_URL}/api/notes/user/${user._id}`,
+      const data = await fetchWithCache(
+        `/api/notes/user/${user._id}`,
+        {},
+        { cacheKey: `userNotes_${user._id}`, cacheDuration: 30000 }
       );
-      if (response.ok) {
-        const data = await response.json();
+      if (data) {
         setNotes(data);
       }
     } catch (error) {
@@ -44,7 +44,11 @@ function MyNotes({ user, isAdmin }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, fetchWithCache]);
+
+  useEffect(() => {
+    fetchUserNotes();
+  }, [fetchUserNotes]);
 
   const handleDelete = async (id) => {
     try {
@@ -54,9 +58,9 @@ function MyNotes({ user, isAdmin }) {
 
       if (response.ok) {
         setNotes(notes.filter((note) => note._id !== id));
+        invalidateCache("userNotes_");
       } else {
         const data = await response.json();
-        // If note not found (404), still remove from UI
         if (response.status === 404) {
           console.log("Note not found, removing from UI");
           setNotes(notes.filter((note) => note._id !== id));
@@ -71,7 +75,6 @@ function MyNotes({ user, isAdmin }) {
 
   const handleFavorite = async (id) => {
     try {
-      // Pass userId to verify ownership
       const url = user?._id
         ? `${BACKEND_URL}/api/notes/${id}/favorite?userId=${user._id}`
         : `${BACKEND_URL}/api/notes/${id}/favorite`;

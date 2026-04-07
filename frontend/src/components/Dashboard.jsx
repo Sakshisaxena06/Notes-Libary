@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
-import { fetchWithAuth } from "../utils/api";
+import { useState, useEffect, useCallback } from "react";
+import { useNotesCache } from "../hooks/useNotesCache";
 import "./PageContent.css";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 function Dashboard({ isAdmin, user }) {
   const [stats, setStats] = useState({
@@ -13,35 +11,34 @@ function Dashboard({ isAdmin, user }) {
   });
   const [loading, setLoading] = useState(true);
 
-  // Get user name from props or localStorage
   const userName = user?.name || localStorage.getItem("userName") || "User";
 
-  // Fetch stats on mount only
-  useEffect(() => {
-    fetchStats();
-  }, [user]);
+  const { fetchWithCache } = useNotesCache(user, isAdmin);
 
-  const fetchStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     try {
-      // Use optimized single endpoint for all stats
       const params = new URLSearchParams();
       if (user?._id) params.append("userId", user._id);
       if (isAdmin) params.append("isAdmin", "true");
 
-      const statsResponse = await fetchWithAuth(
-        `${BACKEND_URL}/api/notes/stats?${params.toString()}`,
+      const statsData = await fetchWithCache("/api/notes/stats", 
+        Object.fromEntries(params.entries()),
+        { cacheKey: `dashboardStats_${isAdmin}_${user?._id}`, cacheDuration: 30000 }
       );
 
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
+      if (statsData) {
         setStats(statsData);
       }
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching stats:", error);
+    } finally {
       setLoading(false);
     }
-  };
+  }, [user, isAdmin, fetchWithCache]);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, [fetchDashboardStats]);
 
   if (loading) {
     return (

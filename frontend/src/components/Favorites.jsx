@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchWithAuth } from "../utils/api";
 import { Document, Page, pdfjs } from "react-pdf";
+import { useNotesCache } from "../hooks/useNotesCache";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import "./PageContent.css";
 
-// Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-const getCorrectFileUrl = (fileUrl, fileType) => {
+const getCorrectFileUrl = (fileUrl) => {
   return fileUrl;
 };
 
@@ -22,20 +22,18 @@ function Favorites({ user, isAdmin }) {
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
 
-  useEffect(() => {
-    fetchFavorites();
-  }, [user]);
+  const { fetchWithCache } = useNotesCache(user, isAdmin);
 
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     try {
-      // Pass userId to backend for filtering
-      const url = user?._id
-        ? `${BACKEND_URL}/api/notes/favorites?userId=${user._id}`
-        : `${BACKEND_URL}/api/notes/favorites`;
+      const params = user?._id ? { userId: user._id } : {};
 
-      const response = await fetchWithAuth(url);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await fetchWithCache(
+        "/api/notes/favorites",
+        params,
+        { cacheKey: `favorites_${user?._id || 'all'}`, cacheDuration: 30000 }
+      );
+      if (data) {
         setFavorites(data);
       }
     } catch (error) {
@@ -43,7 +41,11 @@ function Favorites({ user, isAdmin }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, fetchWithCache]);
+
+  useEffect(() => {
+    fetchFavorites();
+  }, [fetchFavorites]);
 
   const handleRemoveFavorite = async (id) => {
     try {

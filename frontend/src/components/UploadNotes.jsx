@@ -1,17 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { fetchWithAuth } from "../utils/api";
 import { Document, Page, pdfjs } from "react-pdf";
+import { useNotesCache } from "../hooks/useNotesCache";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import "./PageContent.css";
 
-// Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-// No URL transformation needed - Cloudinary auto type handles correctly
-const getCorrectFileUrl = (fileUrl, fileType) => {
+const getCorrectFileUrl = (fileUrl) => {
   return fileUrl;
 };
 
@@ -23,9 +22,9 @@ function UploadNotes({ user, isAdmin }) {
   const [showPopup, setShowPopup] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
-  const [editingType, setEditingType] = useState(null); // 'selected' or 'uploaded'
+  const [editingType, setEditingType] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState(""); // Empty by default to force selection
+  const [selectedSubject, setSelectedSubject] = useState("");
   const [showSubjectSelection, setShowSubjectSelection] = useState(false);
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -33,38 +32,38 @@ function UploadNotes({ user, isAdmin }) {
   const fileInputRef = useRef(null);
   const editFileInputRef = useRef(null);
 
-  // Load uploaded files from backend on mount
-  useEffect(() => {
-    if (user?._id) {
-      fetchUserNotes();
-    }
-    fetchSubjects();
-  }, [user]);
+  const { fetchWithCache, invalidateCache } = useNotesCache(user, isAdmin);
 
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
     try {
-      const response = await fetchWithAuth(`${BACKEND_URL}/api/subjects`);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await fetchWithCache(
+        "/api/subjects",
+        {},
+        { cacheKey: "allSubjects", cacheDuration: 300000 }
+      );
+      if (data) {
         setSubjects(data);
       }
     } catch (error) {
       console.error("Error fetching subjects:", error);
     }
-  };
+  }, [fetchWithCache]);
 
-  const fetchUserNotes = async () => {
+  const fetchUserNotes = useCallback(async () => {
+    if (!user?._id) return;
+    
     try {
-      const response = await fetchWithAuth(
-        `${BACKEND_URL}/api/notes/user/${user._id}`,
+      const data = await fetchWithCache(
+        `/api/notes/user/${user._id}`,
+        {},
+        { cacheKey: `userNotes_${user._id}`, cacheDuration: 30000 }
       );
-      if (response.ok) {
-        const notes = await response.json();
-        const filesWithData = notes
+      if (data) {
+        const filesWithData = data
           .filter((note) => note.fileUrl)
           .map((note) => ({
             name: note.fileName,
-            size: 0, // Size not stored, will show as 0
+            size: 0,
             type: note.fileType,
             fileUrl: note.fileUrl,
             _id: note._id,
@@ -75,7 +74,12 @@ function UploadNotes({ user, isAdmin }) {
     } catch (error) {
       console.error("Error fetching user notes:", error);
     }
-  };
+  }, [user, fetchWithCache]);
+
+  useEffect(() => {
+    fetchSubjects();
+    fetchUserNotes();
+  }, [fetchSubjects, fetchUserNotes]);
 
   const handleFileSelect = (event) => {
     const selectedFiles = Array.from(event.target.files);
@@ -147,27 +151,12 @@ function UploadNotes({ user, isAdmin }) {
     e.stopPropagation();
     const fileToDelete = uploadedFiles[index];
 
-    console.log("Delete request:", {
-      fileToDelete,
-      user,
-      isAdmin,
-      userId: user?._id,
-      hasUserId: !!user?._id,
-    });
-
-    // If file has an ID, delete it from backend
     if (fileToDelete?._id) {
       try {
-        // Pass userId and isAdmin for authorization
         const params = new URLSearchParams();
         const userId = user?._id || user?.id;
         if (userId) params.append("userId", userId);
         if (isAdmin) params.append("isAdmin", "true");
-
-        console.log(
-          "Delete URL:",
-          `${BACKEND_URL}/api/notes/${fileToDelete._id}?${params.toString()}`,
-        );
 
         const response = await fetchWithAuth(
           `${BACKEND_URL}/api/notes/${fileToDelete._id}?${params.toString()}`,
@@ -178,7 +167,6 @@ function UploadNotes({ user, isAdmin }) {
 
         if (!response.ok) {
           const data = await response.json();
-          // If note not found (404), still remove from UI
           if (response.status === 404) {
             console.log("Note not found, removing from UI");
           } else {
@@ -192,10 +180,8 @@ function UploadNotes({ user, isAdmin }) {
     }
 
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-
-    // Clear AllNotes cache so it will fetch fresh data
-    sessionStorage.removeItem("allNotes");
-    sessionStorage.removeItem("allSubjects");
+    invalidateCache("allNotes");
+    invalidateCache("userNotes_");
   };
 
   const handleFavorite = async (index, e) => {
@@ -395,11 +381,10 @@ function UploadNotes({ user, isAdmin }) {
       setSelectedSubject("");
       setShowSubjectSelection(false);
 
-      // Clear AllNotes cache so it will fetch fresh data
-      sessionStorage.removeItem("allNotes");
-      sessionStorage.removeItem("allSubjects");
+      invalidateCache("allNotes");
+      invalidateCache("userNotes_");
+      invalidateCache("allSubjects");
 
-      // Show success popup
       setShowPopup(true);
       // Hide popup after 3 seconds
       setTimeout(() => {
