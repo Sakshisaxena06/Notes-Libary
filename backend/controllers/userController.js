@@ -89,14 +89,14 @@ export const adminLogin = async (req, res) => {
     const { username, password } = req.body;
 
     // Check for admin credentials
-    if (username === "sug_admin" && password === "@#Chem0987") {
+    if (username === "sakshi_admin" && password === "@#Chem0987") {
       // Find or create admin user
       let admin = await User.findOne({ isAdmin: true });
 
       if (!admin) {
         admin = await User.create({
-          name: "Admin",
-          email: "admin@sug.com",
+          name: "Sakshi Admin",
+          email: "sakshi_admin@sug.com",
           password: "@#Chem0987",
           isAdmin: true,
         });
