@@ -569,7 +569,7 @@ function UploadNotes({ user, isAdmin }) {
         <h3>Supported Formats:</h3>
         <p>PDF, Word Documents (DOC/DOCX), Text Files, Images (PNG/JPG)</p>
         <p className="file-size-limit">
-          Maximum file size: 10 MB (Cloudinary free plan limit)
+          Maximum file size: 10 MB 
         </p>
       </div>
 
