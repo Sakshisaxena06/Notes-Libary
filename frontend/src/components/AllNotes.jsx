@@ -29,8 +29,10 @@ function AllNotes({ user, isAdmin }) {
 
     const loadData = async () => {
       try {
+        const params = user?._id ? { currentUserId: user._id } : {};
+        
         const [notesData, subjectsData] = await Promise.all([
-          fetchWithCache("/api/notes", {}, { cacheKey: "allNotes", cacheDuration: 60000 }),
+          fetchWithCache("/api/notes", params, { cacheKey: "allNotes", cacheDuration: 60000 }),
           fetchWithCache("/api/subjects", {}, { cacheKey: "allSubjects", cacheDuration: 300000 })
         ]);
         
@@ -53,7 +55,7 @@ function AllNotes({ user, isAdmin }) {
       ignore = true;
       isMounted = false;
     };
-  }, [fetchWithCache]);
+  }, [user?._id]);
 
   useEffect(() => {
     if (prevSubject !== null && prevSubject !== selectedSubject) {
@@ -357,10 +359,10 @@ function AllNotes({ user, isAdmin }) {
                   <div className="note-header">
                     <h3>{note.title}</h3>
                     <button
-                      className={`favorite-btn ${note.isFavorite ? "active" : ""}`}
+                      className={`favorite-btn ${note.isFavoritedByCurrentUser ? "active" : ""}`}
                       onClick={() => handleFavorite(note._id)}
                     >
-                      {note.isFavorite ? "⭐" : "☆"}
+                      {note.isFavoritedByCurrentUser ? "⭐" : "☆"}
                     </button>
                   </div>
                   {note.fileUrl ? (

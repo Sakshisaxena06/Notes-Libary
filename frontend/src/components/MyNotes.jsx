@@ -31,9 +31,10 @@ function MyNotes({ user, isAdmin }) {
     }
     
     try {
+      const params = { currentUserId: user._id };
       const data = await fetchWithCache(
         `/api/notes/user/${user._id}`,
-        {},
+        params,
         { cacheKey: `userNotes_${user._id}`, cacheDuration: 30000 }
       );
       if (data) {
@@ -250,10 +251,10 @@ function MyNotes({ user, isAdmin }) {
               <div className="note-header">
                 <h3>{note.title}</h3>
                 <button
-                  className={`favorite-btn ${note.isFavorite ? "active" : ""}`}
+                  className={`favorite-btn ${note.isFavoritedByCurrentUser ? "active" : ""}`}
                   onClick={() => handleFavorite(note._id)}
                 >
-                  {note.isFavorite ? "⭐" : "☆"}
+                  {note.isFavoritedByCurrentUser ? "⭐" : "☆"}
                 </button>
               </div>
               {note.fileUrl ? (

@@ -53,9 +53,10 @@ function UploadNotes({ user, isAdmin }) {
     if (!user?._id) return;
     
     try {
+      const params = { currentUserId: user._id };
       const data = await fetchWithCache(
         `/api/notes/user/${user._id}`,
-        {},
+        params,
         { cacheKey: `userNotes_${user._id}`, cacheDuration: 30000 }
       );
       if (data) {
@@ -67,7 +68,7 @@ function UploadNotes({ user, isAdmin }) {
             type: note.fileType,
             fileUrl: note.fileUrl,
             _id: note._id,
-            isFavorite: note.isFavorite || false,
+            isFavoritedByCurrentUser: note.isFavoritedByCurrentUser || false,
           }));
         setUploadedFiles(filesWithData);
       }
@@ -189,7 +190,6 @@ function UploadNotes({ user, isAdmin }) {
     const file = uploadedFiles[index];
     if (file?._id) {
       try {
-        // Pass userId to verify ownership
         const url = user?._id
           ? `${BACKEND_URL}/api/notes/${file._id}/favorite?userId=${user._id}`
           : `${BACKEND_URL}/api/notes/${file._id}/favorite`;
@@ -200,9 +200,11 @@ function UploadNotes({ user, isAdmin }) {
         const updatedNote = await response.json();
         setUploadedFiles((prev) =>
           prev.map((f, i) =>
-            i === index ? { ...f, isFavorite: updatedNote.isFavorite } : f,
+            i === index ? { ...f, isFavoritedByCurrentUser: updatedNote.favoritedBy.some(id => id.toString() === user._id) } : f,
           ),
         );
+        invalidateCache("userNotes_");
+        invalidateCache("allNotes");
       } catch (error) {
         console.error("Error toggling favorite:", error);
       }
@@ -706,15 +708,15 @@ function UploadNotes({ user, isAdmin }) {
                 </div>
                 <div className="file-actions">
                   <button
-                    className={`action-btn favorite ${file.isFavorite ? "active" : ""}`}
+                    className={`action-btn favorite ${file.isFavoritedByCurrentUser ? "active" : ""}`}
                     onClick={(e) => handleFavorite(index, e)}
                     title={
-                      file.isFavorite
+                      file.isFavoritedByCurrentUser
                         ? "Remove from Favorites"
                         : "Add to Favorites"
                     }
                   >
-                    {file.isFavorite ? "⭐" : "☆"}
+                    {file.isFavoritedByCurrentUser ? "⭐" : "☆"}
                   </button>
                   <button
                     className="action-btn view"

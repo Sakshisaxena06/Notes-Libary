@@ -83,7 +83,22 @@ export const getUploadSignature = async (req, res) => {
 // @desc    Get all notes
 export const getNotes = async (req, res) => {
   try {
+    const { currentUserId } = req.query;
     const notes = await Note.find({}).sort({ createdAt: -1 });
+    
+    // If currentUserId provided, add isFavoritedByCurrentUser field
+    if (currentUserId) {
+      const userIdObj = new mongoose.Types.ObjectId(currentUserId);
+      const notesWithUserFavorite = notes.map(note => {
+        const noteObj = note.toObject();
+        noteObj.isFavoritedByCurrentUser = note.favoritedBy.some(
+          id => id.toString() === currentUserId
+        );
+        return noteObj;
+      });
+      return res.json(notesWithUserFavorite);
+    }
+    
     res.json(notes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -93,9 +108,23 @@ export const getNotes = async (req, res) => {
 // @desc    Get notes by user
 export const getNotesByUser = async (req, res) => {
   try {
+    const { currentUserId } = req.query;
     const notes = await Note.find({ user: req.params.userId }).sort({
       createdAt: -1,
     });
+    
+    // If currentUserId provided, add isFavoritedByCurrentUser field
+    if (currentUserId) {
+      const notesWithUserFavorite = notes.map(note => {
+        const noteObj = note.toObject();
+        noteObj.isFavoritedByCurrentUser = note.favoritedBy.some(
+          id => id.toString() === currentUserId
+        );
+        return noteObj;
+      });
+      return res.json(notesWithUserFavorite);
+    }
+    
     res.json(notes);
   } catch (error) {
     res.status(500).json({ message: error.message });
