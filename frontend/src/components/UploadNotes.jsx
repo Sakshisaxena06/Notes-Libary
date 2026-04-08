@@ -32,6 +32,8 @@ function UploadNotes({ user, isAdmin }) {
   const fileInputRef = useRef(null);
   const editFileInputRef = useRef(null);
 
+  const { fetchWithCache, invalidateCache } = useNotesCache(user, isAdmin);
+
   if (!isAdmin) {
     return (
       <div className="page-content">
