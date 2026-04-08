@@ -198,6 +198,14 @@ function UploadNotes({ user, isAdmin }) {
     e.stopPropagation();
     const file = uploadedFiles[index];
     if (file?._id) {
+      const wasFavorited = file.isFavoritedByCurrentUser;
+
+      setUploadedFiles((prev) =>
+        prev.map((f, i) =>
+          i === index ? { ...f, isFavoritedByCurrentUser: !wasFavorited } : f,
+        ),
+      );
+
       try {
         const url = user?._id
           ? `${BACKEND_URL}/api/notes/${file._id}/favorite?userId=${user._id}`
@@ -216,6 +224,11 @@ function UploadNotes({ user, isAdmin }) {
         invalidateCache("allNotes");
       } catch (error) {
         console.error("Error toggling favorite:", error);
+        setUploadedFiles((prev) =>
+          prev.map((f, i) =>
+            i === index ? { ...f, isFavoritedByCurrentUser: wasFavorited } : f,
+          ),
+        );
       }
     }
   };

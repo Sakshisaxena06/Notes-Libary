@@ -128,6 +128,17 @@ function AllNotes({ user, isAdmin }) {
   };
 
   const handleFavorite = async (id) => {
+    const noteToUpdate = notes.find((note) => note._id === id);
+    const wasFavorited = noteToUpdate?.isFavoritedByCurrentUser;
+    
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note._id === id
+          ? { ...note, isFavoritedByCurrentUser: !wasFavorited }
+          : note
+      )
+    );
+
     try {
       const url = user?._id
         ? `${BACKEND_URL}/api/notes/${id}/favorite?userId=${user._id}`
@@ -137,12 +148,20 @@ function AllNotes({ user, isAdmin }) {
         method: "PUT",
       });
       const updatedNote = await response.json();
-      const updatedNotes = notes.map((note) =>
-        note._id === id ? updatedNote : note,
+      setNotes((prevNotes) =>
+        prevNotes.map((note) =>
+          note._id === id ? updatedNote : note,
+        )
       );
-      setNotes(updatedNotes);
     } catch (error) {
       console.error("Error toggling favorite:", error);
+      setNotes((prevNotes) =>
+        prevNotes.map((note) =>
+          note._id === id
+            ? { ...note, isFavoritedByCurrentUser: wasFavorited }
+            : note
+        )
+      );
     }
   };
 
