@@ -14,7 +14,6 @@ const userMenuItems = [
   { id: "all-notes", label: "All Notes", icon: "📋" },
   { id: "my-notes", label: "My Notes", icon: "📝" },
   { id: "favorites", label: "Favorites", icon: "⭐" },
-  { id: "upload-notes", label: "Upload Notes", icon: "📤" },
   { id: "profile", label: "Profile", icon: "👤" },
   { id: "logout", label: "Logout", icon: "🚪" },
 ];

@@ -32,7 +32,14 @@ function UploadNotes({ user, isAdmin }) {
   const fileInputRef = useRef(null);
   const editFileInputRef = useRef(null);
 
-  const { fetchWithCache, invalidateCache } = useNotesCache(user, isAdmin);
+  if (!isAdmin) {
+    return (
+      <div className="page-content">
+        <h1>Access Denied</h1>
+        <p>You do not have permission to upload notes. Only administrators can upload files.</p>
+      </div>
+    );
+  }
 
   const fetchSubjects = useCallback(async () => {
     try {
