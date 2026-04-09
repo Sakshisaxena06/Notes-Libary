@@ -123,26 +123,28 @@ function Dashboard({ isAdmin, user }) {
           </div>
         </div>
 
-        <div className="dashboard-stat-card uploaded-notes">
-          <div className="stat-icon">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
+        {isAdmin && (
+          <div className="dashboard-stat-card uploaded-notes">
+            <div className="stat-icon">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div className="stat-info">
+              <span className="stat-count">{stats.uploadedNotes}</span>
+              <span className="stat-label">Uploaded Notes</span>
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-count">{stats.uploadedNotes}</span>
-            <span className="stat-label">Uploaded Notes</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
