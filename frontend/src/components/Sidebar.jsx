@@ -12,7 +12,6 @@ const adminMenuItems = [
 const userMenuItems = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
   { id: "all-notes", label: "All Notes", icon: "📋" },
-  { id: "my-notes", label: "My Notes", icon: "📝" },
   { id: "favorites", label: "Favorites", icon: "⭐" },
   { id: "profile", label: "Profile", icon: "👤" },
   { id: "logout", label: "Logout", icon: "🚪" },
