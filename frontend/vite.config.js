@@ -1,15 +1,7 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// https://vite.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-  return {
-    plugins: [react()],
-    define: {
-      "import.meta.env.VITE_BACKEND_URL": JSON.stringify(
-        env.VITE_BACKEND_URL || "http://192.168.29.86:5000",
-      ),
-    },
-  };
+// ✅ Simple config — let Vite handle .env normally
+export default defineConfig({
+  plugins: [react()],
 });

@@ -6,15 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "migrate:public": "node scripts/migrateToPublic.js",
-    "check:files": "node scripts/checkAndFixFiles.js"
+    "dev": "node server.js"
   },
-  "keywords": [
-    "notes",
-    "mongodb",
-    "api"
-  ],
+  "keywords": ["notes", "mongodb", "api"],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -25,6 +19,6 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.0.3",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^2.0.0"
   }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchWithAuth } from "../utils/api";
+import { fetchWithAuth, BACKEND_URL } from "../utils/api";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useNotesCache } from "../hooks/useNotesCache";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -7,12 +7,6 @@ import "react-pdf/dist/Page/TextLayer.css";
 import "./PageContent.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
-const getCorrectFileUrl = (fileUrl) => {
-  return fileUrl;
-};
 
 function MyNotes({ user, isAdmin }) {
   const [notes, setNotes] = useState([]);
@@ -29,17 +23,13 @@ function MyNotes({ user, isAdmin }) {
       setLoading(false);
       return;
     }
-    
     try {
-      const params = { currentUserId: user._id };
       const data = await fetchWithCache(
         `/api/notes/user/${user._id}`,
-        params,
+        { currentUserId: user._id },
         { cacheKey: `userNotes_${user._id}`, cacheDuration: 30000 }
       );
-      if (data) {
-        setNotes(data);
-      }
+      if (data) setNotes(data);
     } catch (error) {
       console.error("Error fetching user notes:", error);
     } finally {
@@ -53,9 +43,10 @@ function MyNotes({ user, isAdmin }) {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetchWithAuth(`${BACKEND_URL}/api/notes/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetchWithAuth(
+        `${BACKEND_URL}/api/notes/${id}`,
+        { method: "DELETE" }
+      );
 
       if (response.ok) {
         setNotes(notes.filter((note) => note._id !== id));
@@ -63,7 +54,6 @@ function MyNotes({ user, isAdmin }) {
       } else {
         const data = await response.json();
         if (response.status === 404) {
-          console.log("Note not found, removing from UI");
           setNotes(notes.filter((note) => note._id !== id));
         } else {
           alert(data.message || "Cannot delete this note");
@@ -71,6 +61,7 @@ function MyNotes({ user, isAdmin }) {
       }
     } catch (error) {
       console.error("Error deleting note:", error);
+      alert("Failed to delete. Check your connection.");
     }
   };
 
@@ -78,11 +69,9 @@ function MyNotes({ user, isAdmin }) {
     const noteToUpdate = notes.find((note) => note._id === id);
     const wasFavorited = noteToUpdate?.isFavoritedByCurrentUser;
 
-    setNotes((prevNotes) =>
-      prevNotes.map((note) =>
-        note._id === id
-          ? { ...note, isFavoritedByCurrentUser: !wasFavorited }
-          : note
+    setNotes((prev) =>
+      prev.map((note) =>
+        note._id === id ? { ...note, isFavoritedByCurrentUser: !wasFavorited } : note
       )
     );
 
@@ -91,20 +80,16 @@ function MyNotes({ user, isAdmin }) {
         ? `${BACKEND_URL}/api/notes/${id}/favorite?userId=${user._id}`
         : `${BACKEND_URL}/api/notes/${id}/favorite`;
 
-      const response = await fetchWithAuth(url, {
-        method: "PUT",
-      });
+      const response = await fetchWithAuth(url, { method: "PUT" });
       const updatedNote = await response.json();
-      setNotes((prevNotes) =>
-        prevNotes.map((note) => (note._id === id ? updatedNote : note))
+      setNotes((prev) =>
+        prev.map((note) => (note._id === id ? updatedNote : note))
       );
     } catch (error) {
       console.error("Error toggling favorite:", error);
-      setNotes((prevNotes) =>
-        prevNotes.map((note) =>
-          note._id === id
-            ? { ...note, isFavoritedByCurrentUser: wasFavorited }
-            : note
+      setNotes((prev) =>
+        prev.map((note) =>
+          note._id === id ? { ...note, isFavoritedByCurrentUser: wasFavorited } : note
         )
       );
     }
@@ -112,8 +97,7 @@ function MyNotes({ user, isAdmin }) {
 
   const getFileIcon = (fileType) => {
     if (fileType === "application/pdf") return "📕";
-    if (fileType?.includes("word") || fileType?.includes("document"))
-      return "📘";
+    if (fileType?.includes("word") || fileType?.includes("document")) return "📘";
     if (fileType?.startsWith("image/")) return "🖼️";
     return "📄";
   };
@@ -130,26 +114,6 @@ function MyNotes({ user, isAdmin }) {
     setPageNumber(1);
   };
 
-  const zoomIn = () => {
-    setScale((prev) => Math.min(prev + 0.25, 3.0));
-  };
-
-  const zoomOut = () => {
-    setScale((prev) => Math.max(prev - 0.25, 0.5));
-  };
-
-  const resetZoom = () => {
-    setScale(1.0);
-  };
-
-  const goToPrevPage = () => {
-    setPageNumber((prev) => Math.max(prev - 1, 1));
-  };
-
-  const goToNextPage = () => {
-    setPageNumber((prev) => Math.min(prev + 1, numPages));
-  };
-
   if (loading) {
     return (
       <div className="page-content">
@@ -164,13 +128,10 @@ function MyNotes({ user, isAdmin }) {
       <h1>My Notes</h1>
       <p>View and manage all your uploaded notes here.</p>
 
-      {/* Preview Modal */}
       {selectedNote && (
         <div className="preview-modal" onClick={closePreview}>
           <div className="preview-content" onClick={(e) => e.stopPropagation()}>
-            <button className="preview-close" onClick={closePreview}>
-              ✕
-            </button>
+            <button className="preview-close" onClick={closePreview}>✕</button>
             <h3>{selectedNote.title || selectedNote.fileName}</h3>
             {selectedNote.fileType?.startsWith("image/") ? (
               <img src={selectedNote.fileUrl} alt={selectedNote.title} />
@@ -178,80 +139,35 @@ function MyNotes({ user, isAdmin }) {
               <div className="pdf-viewer-container">
                 <div className="pdf-controls">
                   <div className="zoom-controls">
-                    <button
-                      onClick={zoomOut}
-                      disabled={scale <= 0.5}
-                      title="Zoom Out"
-                    >
-                      −
-                    </button>
-                    <span className="zoom-level">
-                      {Math.round(scale * 100)}%
-                    </span>
-                    <button
-                      onClick={zoomIn}
-                      disabled={scale >= 3.0}
-                      title="Zoom In"
-                    >
-                      +
-                    </button>
-                    <button onClick={resetZoom} title="Reset Zoom">
-                      Reset
-                    </button>
+                    <button onClick={() => setScale((p) => Math.max(p - 0.25, 0.5))} disabled={scale <= 0.5}>−</button>
+                    <span className="zoom-level">{Math.round(scale * 100)}%</span>
+                    <button onClick={() => setScale((p) => Math.min(p + 0.25, 3.0))} disabled={scale >= 3.0}>+</button>
+                    <button onClick={() => setScale(1.0)}>Reset</button>
                   </div>
                   {numPages && numPages > 1 && (
                     <div className="page-controls">
-                      <button onClick={goToPrevPage} disabled={pageNumber <= 1}>
-                        ‹ Prev
-                      </button>
-                      <span className="page-info">
-                        Page {pageNumber} of {numPages}
-                      </span>
-                      <button
-                        onClick={goToNextPage}
-                        disabled={pageNumber >= numPages}
-                      >
-                        Next ›
-                      </button>
+                      <button onClick={() => setPageNumber((p) => Math.max(p - 1, 1))} disabled={pageNumber <= 1}>‹ Prev</button>
+                      <span className="page-info">Page {pageNumber} of {numPages}</span>
+                      <button onClick={() => setPageNumber((p) => Math.min(p + 1, numPages))} disabled={pageNumber >= numPages}>Next ›</button>
                     </div>
                   )}
                 </div>
                 <div className="pdf-document-wrapper">
                   <Document
-                    file={getCorrectFileUrl(
-                      selectedNote.fileUrl,
-                      selectedNote.fileType,
-                    )}
+                    file={selectedNote.fileUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={<div className="pdf-loading">Loading PDF...</div>}
-                    error={
-                      <div className="pdf-error">Failed to load PDF file.</div>
-                    }
+                    error={<div className="pdf-error">Failed to load PDF file.</div>}
                   >
-                    <Page
-                      pageNumber={pageNumber}
-                      scale={scale}
-                      loading={
-                        <div className="pdf-loading">Loading page...</div>
-                      }
-                    />
+                    <Page pageNumber={pageNumber} scale={scale} loading={<div className="pdf-loading">Loading page...</div>} />
                   </Document>
                 </div>
               </div>
             ) : (
               <div className="preview-not-available">
-                <span className="file-icon">
-                  {getFileIcon(selectedNote.fileType)}
-                </span>
+                <span className="file-icon">{getFileIcon(selectedNote.fileType)}</span>
                 <p>Preview not available</p>
-                <a
-                  href={getCorrectFileUrl(
-                    selectedNote.fileUrl,
-                    selectedNote.fileType,
-                  )}
-                  download={selectedNote.fileName}
-                  className="download-link"
-                >
+                <a href={selectedNote.fileUrl} download={selectedNote.fileName} className="download-link">
                   Download File
                 </a>
               </div>
@@ -279,43 +195,20 @@ function MyNotes({ user, isAdmin }) {
               </div>
               {note.fileUrl ? (
                 <div className="note-file-preview">
-                  {note.fileType?.startsWith("image/") ? (
-                    <div
-                      className="file-link"
-                      onClick={() => setSelectedNote(note)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      🖼️ View Image
-                    </div>
-                  ) : note.fileType === "application/pdf" ? (
-                    <div
-                      className="file-link"
-                      onClick={() => setSelectedNote(note)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {getFileIcon(note.fileType)} View PDF
-                    </div>
-                  ) : (
-                    <div
-                      className="file-link"
-                      onClick={() => setSelectedNote(note)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {getFileIcon(note.fileType)} View File
-                    </div>
-                  )}
+                  <div
+                    className="file-link"
+                    onClick={() => setSelectedNote(note)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {getFileIcon(note.fileType)} View {note.fileType === "application/pdf" ? "PDF" : note.fileType?.startsWith("image/") ? "Image" : "File"}
+                  </div>
                 </div>
               ) : (
                 <p className="note-content">{note.content}</p>
               )}
               <div className="note-footer">
-                <span className="note-category">
-                  {note.subject || note.category}
-                </span>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(note._id)}
-                >
+                <span className="note-category">{note.subject || note.category}</span>
+                <button className="delete-btn" onClick={() => handleDelete(note._id)}>
                   Delete
                 </button>
               </div>

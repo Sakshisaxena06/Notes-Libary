@@ -1,5 +1,8 @@
 {
   "appId": "com.notes.library",
   "appName": "Notes",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
 }

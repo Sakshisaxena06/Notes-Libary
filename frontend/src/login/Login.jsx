@@ -1,14 +1,9 @@
 import { useState } from "react";
 import "./Auth.css";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-function Login({
-  onLoginSuccess,
-  onBack,
-  onSwitchToSignup,
-  onAdminLoginClick,
-}) {
+function Login({ onLoginSuccess, onBack, onSwitchToSignup, onAdminLoginClick }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,26 +23,25 @@ function Login({
     try {
       const response = await fetch(`${BACKEND_URL}/api/users/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.toLowerCase(), password }), // ✅ lowercase email
       });
 
       const data = await response.json();
-if (response.ok) {
-  localStorage.setItem("token", data.token);
-  localStorage.setItem("userName", data.name);
-  localStorage.setItem("userEmail", data.email);
-  localStorage.setItem("userId", data._id);
-  onLoginSuccess(data);
-} else {
-  setError(data.message || "Login failed");
-}
-   } catch (err) {
-  console.log(err);
-  setError(err.message);
-} finally {
+
+      if (response.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userName", data.name);
+        localStorage.setItem("userEmail", data.email);
+        localStorage.setItem("userId", data._id);
+        onLoginSuccess(data);
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      // ✅ Fixed: friendly error message instead of raw JS error
+      setError("Server error. Please check your connection and try again.");
+    } finally {
       setLoading(false);
     }
   };
@@ -55,15 +49,10 @@ if (response.ok) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <button className="back-btn" onClick={onBack}>
-          ← Back
-        </button>
-
+        <button className="back-btn" onClick={onBack}>← Back</button>
         <h2>Login</h2>
         <p className="auth-subtitle">Welcome back! Please login to continue.</p>
-
         {error && <div className="error-message">{error}</div>}
-
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>
@@ -75,7 +64,6 @@ if (response.ok) {
               disabled={loading}
             />
           </div>
-
           <div className="form-group">
             <label>Password</label>
             <input
@@ -86,17 +74,14 @@ if (response.ok) {
               disabled={loading}
             />
           </div>
-
           <button type="submit" className="auth-submit-btn" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
         <p className="auth-switch">
           Don't have an account?{" "}
           <span onClick={onSwitchToSignup}>Create one</span>
         </p>
-
         <div className="admin-login-link">
           <span onClick={onAdminLoginClick}>Admin Login</span>
         </div>

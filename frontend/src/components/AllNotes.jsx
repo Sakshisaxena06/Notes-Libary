@@ -1,13 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import { fetchWithAuth } from "../utils/api";
+import { fetchWithAuth, BACKEND_URL } from "../utils/api";
 import { useNotesCache } from "../hooks/useNotesCache";
 import "./PageContent.css";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
-const getCorrectFileUrl = (fileUrl) => {
-  return fileUrl;
-};
+const getCorrectFileUrl = (fileUrl) => fileUrl;
 
 function AllNotes({ user, isAdmin }) {
   const [notes, setNotes] = useState([]);
@@ -30,12 +26,18 @@ function AllNotes({ user, isAdmin }) {
     const loadData = async () => {
       try {
         const params = user?._id ? { currentUserId: user._id } : {};
-        
+
         const [notesData, subjectsData] = await Promise.all([
-          fetchWithCache("/api/notes", params, { cacheKey: "allNotes", cacheDuration: 60000 }),
-          fetchWithCache("/api/subjects", {}, { cacheKey: "allSubjects", cacheDuration: 300000 })
+          fetchWithCache("/api/notes", params, {
+            cacheKey: "allNotes",
+            cacheDuration: 60000,
+          }),
+          fetchWithCache("/api/subjects", {}, {
+            cacheKey: "allSubjects",
+            cacheDuration: 300000,
+          }),
         ]);
-        
+
         if (!ignore && isMounted) {
           setNotes(notesData || []);
           setSubjects(subjectsData || []);
@@ -43,18 +45,12 @@ function AllNotes({ user, isAdmin }) {
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
-
-    return () => {
-      ignore = true;
-      isMounted = false;
-    };
+    return () => { ignore = true; isMounted = false; };
   }, [user?._id]);
 
   useEffect(() => {
@@ -76,7 +72,6 @@ function AllNotes({ user, isAdmin }) {
       : notes.filter((note) => note.subject === selectedSubject)
     : [];
 
-  // Search filter for notes within a subject
   const searchedNotes = searchQuery
     ? filteredNotes.filter((note) => {
         const query = searchQuery.toLowerCase();
@@ -93,7 +88,6 @@ function AllNotes({ user, isAdmin }) {
       })
     : filteredNotes;
 
-  // Group notes by subject (memoized for performance)
   const groupedNotes = useMemo(() => {
     return subjects.reduce((acc, subject) => {
       acc[subject.name] = notes.filter((note) => note.subject === subject.name);
@@ -103,20 +97,18 @@ function AllNotes({ user, isAdmin }) {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetchWithAuth(`${BACKEND_URL}/api/notes/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetchWithAuth(
+        `${BACKEND_URL}/api/notes/${id}`,
+        { method: "DELETE" }
+      );
 
       if (response.ok) {
-        const updatedNotes = notes.filter((note) => note._id !== id);
-        setNotes(updatedNotes);
+        setNotes(notes.filter((note) => note._id !== id));
         clearCache("allNotes");
       } else {
         const data = await response.json();
         if (response.status === 404) {
-          console.log("Note not found, removing from UI");
-          const updatedNotes = notes.filter((note) => note._id !== id);
-          setNotes(updatedNotes);
+          setNotes(notes.filter((note) => note._id !== id));
           clearCache("allNotes");
         } else {
           alert(data.message || "Cannot delete this note");
@@ -124,15 +116,16 @@ function AllNotes({ user, isAdmin }) {
       }
     } catch (error) {
       console.error("Error deleting note:", error);
+      alert("Failed to delete. Check your connection.");
     }
   };
 
   const handleFavorite = async (id) => {
     const noteToUpdate = notes.find((note) => note._id === id);
     const wasFavorited = noteToUpdate?.isFavoritedByCurrentUser;
-    
-    setNotes((prevNotes) =>
-      prevNotes.map((note) =>
+
+    setNotes((prev) =>
+      prev.map((note) =>
         note._id === id
           ? { ...note, isFavoritedByCurrentUser: !wasFavorited }
           : note
@@ -144,19 +137,15 @@ function AllNotes({ user, isAdmin }) {
         ? `${BACKEND_URL}/api/notes/${id}/favorite?userId=${user._id}`
         : `${BACKEND_URL}/api/notes/${id}/favorite`;
 
-      const response = await fetchWithAuth(url, {
-        method: "PUT",
-      });
+      const response = await fetchWithAuth(url, { method: "PUT" });
       const updatedNote = await response.json();
-      setNotes((prevNotes) =>
-        prevNotes.map((note) =>
-          note._id === id ? updatedNote : note,
-        )
+      setNotes((prev) =>
+        prev.map((note) => (note._id === id ? updatedNote : note))
       );
     } catch (error) {
       console.error("Error toggling favorite:", error);
-      setNotes((prevNotes) =>
-        prevNotes.map((note) =>
+      setNotes((prev) =>
+        prev.map((note) =>
           note._id === id
             ? { ...note, isFavoritedByCurrentUser: wasFavorited }
             : note
@@ -171,13 +160,10 @@ function AllNotes({ user, isAdmin }) {
       alert("Please enter a subject name");
       return;
     }
-
     try {
       const response = await fetchWithAuth(`${BACKEND_URL}/api/subjects`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newSubjectName, icon: newSubjectIcon }),
       });
 
@@ -194,21 +180,17 @@ function AllNotes({ user, isAdmin }) {
       }
     } catch (error) {
       console.error("Error adding subject:", error);
-      alert("Failed to add subject");
+      alert("Failed to add subject. Check your connection.");
     }
   };
 
   const handleDeleteSubject = async (subjectId, subjectName) => {
-    if (!confirm(`Are you sure you want to delete "${subjectName}"?`)) {
-      return;
-    }
+    if (!confirm(`Are you sure you want to delete "${subjectName}"?`)) return;
 
     try {
       const response = await fetchWithAuth(
         `${BACKEND_URL}/api/subjects/${subjectId}`,
-        {
-          method: "DELETE",
-        },
+        { method: "DELETE" }
       );
 
       if (response.ok) {
@@ -220,7 +202,7 @@ function AllNotes({ user, isAdmin }) {
       }
     } catch (error) {
       console.error("Error deleting subject:", error);
-      alert("Failed to delete subject");
+      alert("Failed to delete subject. Check your connection.");
     }
   };
 
@@ -238,10 +220,8 @@ function AllNotes({ user, isAdmin }) {
       <h1>All Notes</h1>
       <p>Click on a subject to view its notes</p>
 
-      {/* Subject Cards - Show when no subject is selected */}
       {!selectedSubject && (
         <div className="subject-cards-container">
-          {/* All Notes Card */}
           <div
             className="subject-click-card all-card"
             onClick={() => setSelectedSubject("All")}
@@ -251,7 +231,6 @@ function AllNotes({ user, isAdmin }) {
             <span className="subject-card-count">{notes.length} notes</span>
           </div>
 
-          {/* Subject Cards */}
           {subjects.map((subject) => (
             <div
               key={subject._id}
@@ -278,7 +257,6 @@ function AllNotes({ user, isAdmin }) {
             </div>
           ))}
 
-          {/* Add Subject Card - Admin only */}
           {isAdmin && (
             <div
               className="subject-click-card add-subject-card"
@@ -289,7 +267,6 @@ function AllNotes({ user, isAdmin }) {
             </div>
           )}
 
-          {/* Add Subject Form */}
           {showAddSubject && isAdmin && (
             <div className="add-subject-form">
               <form onSubmit={handleAddSubject}>
@@ -316,9 +293,7 @@ function AllNotes({ user, isAdmin }) {
                   <option value="🌐">🌐</option>
                   <option value="📊">📊</option>
                 </select>
-                <button type="submit" className="add-subject-btn">
-                  Add
-                </button>
+                <button type="submit" className="add-subject-btn">Add</button>
                 <button
                   type="button"
                   className="cancel-subject-btn"
@@ -332,14 +307,11 @@ function AllNotes({ user, isAdmin }) {
         </div>
       )}
 
-      {/* Show notes when a subject is selected */}
       {selectedSubject && (
         <div className="subject-notes-view">
           <div className="subject-notes-header">
             <span className="subject-icon">
-              {selectedSubject === "All"
-                ? "📁"
-                : getSubjectIcon(selectedSubject)}
+              {selectedSubject === "All" ? "📁" : getSubjectIcon(selectedSubject)}
             </span>
             <h2>{selectedSubject}</h2>
             <span className="note-count">{searchedNotes.length} notes</span>
@@ -387,30 +359,15 @@ function AllNotes({ user, isAdmin }) {
                   {note.fileUrl ? (
                     <div className="note-file-preview">
                       {note.fileType?.startsWith("image/") ? (
-                        <a
-                          href={note.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="file-link"
-                        >
+                        <a href={note.fileUrl} target="_blank" rel="noopener noreferrer" className="file-link">
                           🖼️ View Image
                         </a>
                       ) : note.fileType === "application/pdf" ? (
-                        <a
-                          href={getCorrectFileUrl(note.fileUrl, note.fileType)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="file-link"
-                        >
+                        <a href={getCorrectFileUrl(note.fileUrl)} target="_blank" rel="noopener noreferrer" className="file-link">
                           📕 View PDF
                         </a>
                       ) : (
-                        <a
-                          href={note.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="file-link"
-                        >
+                        <a href={note.fileUrl} target="_blank" rel="noopener noreferrer" className="file-link">
                           📄 View File
                         </a>
                       )}
@@ -419,27 +376,20 @@ function AllNotes({ user, isAdmin }) {
                     <p className="note-content">{note.content}</p>
                   )}
                   <div className="note-footer">
-                    <span className="note-category">
-                      {note.subject || note.category}
-                    </span>
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDelete(note._id)}
-                    >
-                      Delete
-                    </button>
+                    <span className="note-category">{note.subject || note.category}</span>
+                    {(isAdmin || note.user === user?._id) && (
+                      <button className="delete-btn" onClick={() => handleDelete(note._id)}>
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Back button at bottom of page */}
           <div className="back-bottom-container">
-            <button
-              className="back-btn-full"
-              onClick={() => setSelectedSubject(null)}
-            >
+            <button className="back-btn-full" onClick={() => setSelectedSubject(null)}>
               ← Back to Subjects
             </button>
           </div>

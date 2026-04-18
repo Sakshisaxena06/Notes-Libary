@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchWithAuth } from "../utils/api";
+import { fetchWithAuth, BACKEND_URL } from "../utils/api";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useNotesCache } from "../hooks/useNotesCache";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -7,12 +7,6 @@ import "react-pdf/dist/Page/TextLayer.css";
 import "./PageContent.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
-const getCorrectFileUrl = (fileUrl) => {
-  return fileUrl;
-};
 
 function Favorites({ user, isAdmin }) {
   const [favorites, setFavorites] = useState([]);
@@ -27,15 +21,12 @@ function Favorites({ user, isAdmin }) {
   const fetchFavorites = useCallback(async () => {
     try {
       const params = user?._id ? { userId: user._id } : {};
-
       const data = await fetchWithCache(
         "/api/notes/favorites",
         params,
-        { cacheKey: `favorites_${user?._id || 'all'}`, cacheDuration: 30000 }
+        { cacheKey: `favorites_${user?._id || "all"}`, cacheDuration: 30000 }
       );
-      if (data) {
-        setFavorites(data);
-      }
+      if (data) setFavorites(data);
     } catch (error) {
       console.error("Error fetching favorites:", error);
     } finally {
@@ -49,43 +40,32 @@ function Favorites({ user, isAdmin }) {
 
   const handleRemoveFavorite = async (id) => {
     try {
-      // Pass userId to verify ownership
       const url = user?._id
         ? `${BACKEND_URL}/api/notes/${id}/favorite?userId=${user._id}`
         : `${BACKEND_URL}/api/notes/${id}/favorite`;
 
-      const response = await fetchWithAuth(url, {
-        method: "PUT",
-      });
+      const response = await fetchWithAuth(url, { method: "PUT" });
       if (response.ok) {
         setFavorites(favorites.filter((note) => note._id !== id));
       }
     } catch (error) {
       console.error("Error removing favorite:", error);
+      alert("Failed to remove favorite. Check your connection.");
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      // Pass userId and isAdmin for authorization
-      const params = new URLSearchParams();
-      if (user?._id) params.append("userId", user._id);
-      if (isAdmin) params.append("isAdmin", "true");
-
       const response = await fetchWithAuth(
-        `${BACKEND_URL}/api/notes/${id}?${params.toString()}`,
-        {
-          method: "DELETE",
-        },
+        `${BACKEND_URL}/api/notes/${id}`,
+        { method: "DELETE" }
       );
 
       if (response.ok) {
         setFavorites(favorites.filter((note) => note._id !== id));
       } else {
         const data = await response.json();
-        // If note not found (404), still remove from UI
         if (response.status === 404) {
-          console.log("Note not found, removing from UI");
           setFavorites(favorites.filter((note) => note._id !== id));
         } else {
           alert(data.message || "Cannot delete this note");
@@ -93,13 +73,13 @@ function Favorites({ user, isAdmin }) {
       }
     } catch (error) {
       console.error("Error deleting note:", error);
+      alert("Failed to delete. Check your connection.");
     }
   };
 
   const getFileIcon = (fileType) => {
     if (fileType === "application/pdf") return "📕";
-    if (fileType?.includes("word") || fileType?.includes("document"))
-      return "📘";
+    if (fileType?.includes("word") || fileType?.includes("document")) return "📘";
     if (fileType?.startsWith("image/")) return "🖼️";
     return "📄";
   };
@@ -116,26 +96,6 @@ function Favorites({ user, isAdmin }) {
     setPageNumber(1);
   };
 
-  const zoomIn = () => {
-    setScale((prev) => Math.min(prev + 0.25, 3.0));
-  };
-
-  const zoomOut = () => {
-    setScale((prev) => Math.max(prev - 0.25, 0.5));
-  };
-
-  const resetZoom = () => {
-    setScale(1.0);
-  };
-
-  const goToPrevPage = () => {
-    setPageNumber((prev) => Math.max(prev - 1, 1));
-  };
-
-  const goToNextPage = () => {
-    setPageNumber((prev) => Math.min(prev + 1, numPages));
-  };
-
   if (loading) {
     return (
       <div className="page-content">
@@ -150,13 +110,10 @@ function Favorites({ user, isAdmin }) {
       <h1>Favorites</h1>
       <p>Your favorite notes and uploads.</p>
 
-      {/* Preview Modal */}
       {selectedNote && (
         <div className="preview-modal" onClick={closePreview}>
           <div className="preview-content" onClick={(e) => e.stopPropagation()}>
-            <button className="preview-close" onClick={closePreview}>
-              ✕
-            </button>
+            <button className="preview-close" onClick={closePreview}>✕</button>
             <h3>{selectedNote.title || selectedNote.fileName}</h3>
             {selectedNote.fileType?.startsWith("image/") ? (
               <img src={selectedNote.fileUrl} alt={selectedNote.title} />
@@ -164,80 +121,35 @@ function Favorites({ user, isAdmin }) {
               <div className="pdf-viewer-container">
                 <div className="pdf-controls">
                   <div className="zoom-controls">
-                    <button
-                      onClick={zoomOut}
-                      disabled={scale <= 0.5}
-                      title="Zoom Out"
-                    >
-                      −
-                    </button>
-                    <span className="zoom-level">
-                      {Math.round(scale * 100)}%
-                    </span>
-                    <button
-                      onClick={zoomIn}
-                      disabled={scale >= 3.0}
-                      title="Zoom In"
-                    >
-                      +
-                    </button>
-                    <button onClick={resetZoom} title="Reset Zoom">
-                      Reset
-                    </button>
+                    <button onClick={() => setScale((p) => Math.max(p - 0.25, 0.5))} disabled={scale <= 0.5}>−</button>
+                    <span className="zoom-level">{Math.round(scale * 100)}%</span>
+                    <button onClick={() => setScale((p) => Math.min(p + 0.25, 3.0))} disabled={scale >= 3.0}>+</button>
+                    <button onClick={() => setScale(1.0)}>Reset</button>
                   </div>
                   {numPages && numPages > 1 && (
                     <div className="page-controls">
-                      <button onClick={goToPrevPage} disabled={pageNumber <= 1}>
-                        ‹ Prev
-                      </button>
-                      <span className="page-info">
-                        Page {pageNumber} of {numPages}
-                      </span>
-                      <button
-                        onClick={goToNextPage}
-                        disabled={pageNumber >= numPages}
-                      >
-                        Next ›
-                      </button>
+                      <button onClick={() => setPageNumber((p) => Math.max(p - 1, 1))} disabled={pageNumber <= 1}>‹ Prev</button>
+                      <span className="page-info">Page {pageNumber} of {numPages}</span>
+                      <button onClick={() => setPageNumber((p) => Math.min(p + 1, numPages))} disabled={pageNumber >= numPages}>Next ›</button>
                     </div>
                   )}
                 </div>
                 <div className="pdf-document-wrapper">
                   <Document
-                    file={getCorrectFileUrl(
-                      selectedNote.fileUrl,
-                      selectedNote.fileType,
-                    )}
+                    file={selectedNote.fileUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={<div className="pdf-loading">Loading PDF...</div>}
-                    error={
-                      <div className="pdf-error">Failed to load PDF file.</div>
-                    }
+                    error={<div className="pdf-error">Failed to load PDF file.</div>}
                   >
-                    <Page
-                      pageNumber={pageNumber}
-                      scale={scale}
-                      loading={
-                        <div className="pdf-loading">Loading page...</div>
-                      }
-                    />
+                    <Page pageNumber={pageNumber} scale={scale} loading={<div className="pdf-loading">Loading page...</div>} />
                   </Document>
                 </div>
               </div>
             ) : (
               <div className="preview-not-available">
-                <span className="file-icon">
-                  {getFileIcon(selectedNote.fileType)}
-                </span>
+                <span className="file-icon">{getFileIcon(selectedNote.fileType)}</span>
                 <p>Preview not available</p>
-                <a
-                  href={getCorrectFileUrl(
-                    selectedNote.fileUrl,
-                    selectedNote.fileType,
-                  )}
-                  download={selectedNote.fileName}
-                  className="download-link"
-                >
+                <a href={selectedNote.fileUrl} download={selectedNote.fileName} className="download-link">
                   Download File
                 </a>
               </div>
@@ -256,56 +168,26 @@ function Favorites({ user, isAdmin }) {
             <div key={note._id} className="note-card">
               <div className="note-header">
                 <h3>{note.title}</h3>
-                <button
-                  className="favorite-btn active"
-                  onClick={() => handleRemoveFavorite(note._id)}
-                >
-                  ⭐
-                </button>
+                <button className="favorite-btn active" onClick={() => handleRemoveFavorite(note._id)}>⭐</button>
               </div>
               {note.fileUrl ? (
                 <div className="note-file-preview">
                   {note.fileType?.startsWith("image/") ? (
-                    <a
-                      href={note.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="file-link"
-                    >
-                      🖼️ View Image
-                    </a>
+                    <a href={note.fileUrl} target="_blank" rel="noopener noreferrer" className="file-link">🖼️ View Image</a>
                   ) : note.fileType === "application/pdf" ? (
-                    <div
-                      className="file-link"
-                      onClick={() => setSelectedNote(note)}
-                      style={{ cursor: "pointer" }}
-                    >
+                    <div className="file-link" onClick={() => setSelectedNote(note)} style={{ cursor: "pointer" }}>
                       📕 View PDF
                     </div>
                   ) : (
-                    <a
-                      href={note.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="file-link"
-                    >
-                      📄 View File
-                    </a>
+                    <a href={note.fileUrl} target="_blank" rel="noopener noreferrer" className="file-link">📄 View File</a>
                   )}
                 </div>
               ) : (
                 <p className="note-content">{note.content}</p>
               )}
               <div className="note-footer">
-                <span className="note-category">
-                  {note.subject || note.category}
-                </span>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(note._id)}
-                >
-                  Delete
-                </button>
+                <span className="note-category">{note.subject || note.category}</span>
+                <button className="delete-btn" onClick={() => handleDelete(note._id)}>Delete</button>
               </div>
             </div>
           ))}
