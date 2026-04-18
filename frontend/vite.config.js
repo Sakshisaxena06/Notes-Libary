@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     define: {
       "import.meta.env.VITE_BACKEND_URL": JSON.stringify(
-        env.VITE_BACKEND_URL || "http://localhost:5000",
+        env.VITE_BACKEND_URL || "http://192.168.29.86:5000",
       ),
     },
   };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchWithAuth } from "../utils/api";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ;
 
 const createCacheKey = (endpoint, params = {}) => {
   const paramString = Object.keys(params).length > 0

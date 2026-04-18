@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./Auth.css";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ;
 
 function AdminLogin({ onAdminLoginSuccess, onBack }) {
   const [username, setUsername] = useState("");
@@ -36,6 +36,7 @@ function AdminLogin({ onAdminLoginSuccess, onBack }) {
         localStorage.setItem("userName", data.name);
         localStorage.setItem("userEmail", data.email);
         localStorage.setItem("isAdmin", "true");
+        localStorage.setItem("token", data.token);
         onAdminLoginSuccess(data);
       } else {
         setError(data.message || "Invalid admin credentials");

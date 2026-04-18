@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./Auth.css";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 function Signup({ onSignupSuccess, onBack, onSwitchToLogin }) {
   const [name, setName] = useState("");
@@ -43,15 +43,15 @@ function Signup({ onSignupSuccess, onBack, onSwitchToLogin }) {
 
       const data = await response.json();
 
-      if (response.ok) {
-        // Save user info to localStorage
-        localStorage.setItem("userName", data.name);
-        localStorage.setItem("userEmail", data.email);
-        localStorage.setItem("userId", data._id);
-        onSignupSuccess(data);
-      } else {
-        setError(data.message || "Registration failed");
-      }
+   if (response.ok) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userName", data.name);
+  localStorage.setItem("userEmail", data.email);
+  localStorage.setItem("userId", data._id);
+  onSignupSuccess(data);
+} else {
+  setError(data.message || "Registration failed");
+}
     } catch (err) {
       setError("Server error. Please try again.");
     } finally {

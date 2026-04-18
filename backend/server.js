@@ -22,9 +22,12 @@ const app = express();
 // ✅ FIXED CORS CONFIG
 const corsOptions = {
   origin: [
-    "https://notes-libary-jbp6.vercel.app", // your frontend (deployed)
-    "https://notes-libary.vercel.app", // your backend (deployed)
-    "http://localhost:5173", // local frontend
+    "https://notes-libary-jbp6.vercel.app",
+    "https://notes-libary.vercel.app",
+    "http://localhost:5173",
+    "http://localhost",
+    "capacitor://localhost",
+    
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -131,9 +134,9 @@ const PORT = process.env.PORT || 5000;
 
 // Run server locally only
 if (process.env.VERCEL !== "true") {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+ app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
 }
 
 export default app;
